@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin Panel — MediLink</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .admin-hero {
+      background: linear-gradient(130deg, #1a0a10 0%, #2d0f1c 55%, #3a1020 100%);
+      border-radius: var(--radius); padding: 24px 28px;
+      display: flex; align-items: center; justify-content: space-between; gap: 20px;
+      position: relative; overflow: hidden; margin-bottom: 22px;
+      box-shadow: 0 8px 32px rgba(216,27,96,0.18);
+    }
+    .admin-hero::before {
+      content: ''; position: absolute; top: -40px; right: -40px;
+      width: 220px; height: 220px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(216,27,96,0.22) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .admin-hero-text h1 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 5px; }
+    .admin-hero-text p  { font-size: 13px; color: rgba(255,255,255,0.55); margin: 0; }
+    .admin-hero-stats { display: flex; gap: 14px; flex-shrink: 0; }
+    .admin-stat-pill {
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px; padding: 12px 18px; text-align: center; min-width: 85px;
+    }
+    .admin-stat-pill strong { display: block; font-size: 22px; font-weight: 700; color: #fff; }
+    .admin-stat-pill span   { font-size: 10px; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 0.7px; }
+
+    .admin-section { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); padding: 22px; margin-bottom: 20px; }
+    .admin-section-title { font-size: 15px; font-weight: 700; color: var(--text); margin: 0 0 16px; display: flex; align-items: center; gap: 8px; }
+
+    .users-table { width: 100%; border-collapse: collapse; }
+    .users-table th { text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); padding: 10px 12px; border-bottom: 1px solid var(--border); }
+    .users-table td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 13.5px; color: var(--text); }
+    .users-table tr:last-child td { border-bottom: none; }
+    .users-table tr:hover td { background: var(--bg); }
+
+    .role-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700;
+    }
+    .role-pill.admin { background: rgba(216,27,96,0.1); color: var(--accent); border: 1px solid rgba(216,27,96,0.2); }
+    .role-pill.user  { background: rgba(59,130,246,0.1); color: #2563eb; border: 1px solid rgba(59,130,246,0.2); }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <img src="medilink-logo.png" class="brand-logo" alt="MediLink" />
+    </div>
+    <nav class="nav">
+        <a class="nav-link active" id="adminNavLink" href="admin.html"><span class="nav-icon">⚙️</span><span class="nav-label">Admin Panel</span></a>
+        <a class="nav-link" href="dashboard.html"><span class="nav-icon">📊</span><span class="nav-label">Dashboard</span></a>
+        <a class="nav-link" href="inventory.html"><span class="nav-icon">📦</span><span class="nav-label">Inventory</span></a>
+        <a class="nav-link" href="transfers.html"><span class="nav-icon">🔄</span><span class="nav-label">Patient Transfers</span></a>
+        <a class="nav-link" href="disease-prediction.html"><span class="nav-icon">🔬</span><span class="nav-label">Disease Prediction</span></a>
+        <a class="nav-link" href="shortage-prediction.html"><span class="nav-icon">💊</span><span class="nav-label">Shortage Prediction</span></a>
+        <a class="nav-link" href="faqs.html"><span class="nav-icon">❓</span><span class="nav-label">FAQs</span></a>
+    </nav>
+    <div class="sidebar-help">
+      <a href="faqs.html" class="help-link">
+        <span class="help-icon">?</span>
+        <span class="help-label">Help &amp; Support</span>
+      </a>
+    </div>
+    <div class="sidebar-sync" id="sidebarSync">
+      <div class="sync-dot" id="syncDot"></div>
+      <div class="sync-text">
+        <div class="sync-label">Last synced</div>
+        <div class="sync-time" id="syncTime">--:--</div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="header">
+      <div class="header-left">
+        <h2>Admin Panel</h2>
+      </div>
+      <div class="header-right">
+        <div class="profile-wrapper">
+          <button class="profile-btn" id="profileBtn" aria-label="Profile">
+            <span class="profile-avatar-icon">👑</span>
+          </button>
+          <div class="profile-panel" id="profilePanel">
+        <div class="profile-panel-top">
+        <div class="profile-panel-avatar" id="profileAvatar">👑</div>
+        <div>
+            <div class="profile-panel-name" id="profileName">—</div>
+            <div class="profile-panel-role" id="profileRole">—</div>
+        </div>
+    </div>
+    <div class="profile-panel-body">
+        <div class="pd-row"><span class="pd-label">Hospital ID</span><span class="pd-value" id="pdHospitalId">—</span></div>
+        <div class="pd-row"><span class="pd-label">Hospital</span><span class="pd-value" id="pdHospitalName">—</span></div>
+        <div class="pd-row"><span class="pd-label">Name</span><span class="pd-value" id="pdName">—</span></div>
+        <div class="pd-row"><span class="pd-label">Email</span><span class="pd-value" id="pdEmail">—</span></div>
+        <div class="pd-row"><span class="pd-label">Role</span><span class="pd-value" id="pdRole">—</span></div>
+        <div class="pd-row"><span class="pd-label">Permissions</span><span class="pd-value" id="pdPermissions">—</span></div>
+    </div>
+  <div class="profile-panel-footer">
+    <button class="profile-logout-btn" onclick="handleLogout()">⏻ Logout</button>
+  </div>
+</div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Hero -->
+    <div class="admin-hero">
+      <div class="admin-hero-text">
+        <h1>⚙️ Admin Control Panel</h1>
+        <p>Manage registered staff accounts and hospital registrations across MediLink.</p>
+      </div>
+      <div class="admin-hero-stats">
+        <div class="admin-stat-pill"><strong id="statTotal">–</strong><span>Total Users</span></div>
+        <div class="admin-stat-pill"><strong id="statStaff">–</strong><span>Staff</span></div>
+        <div class="admin-stat-pill"><strong id="statHosps">–</strong><span>Hospitals</span></div>
+      </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="admin-section">
+      <div class="admin-section-title">👥 Registered Users</div>
+      <div style="overflow-x:auto">
+        <table class="users-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Hospital</th>
+              <th>Hospital ID</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody">
+            <tr><td colspan="6" style="text-align:center;padding:24px;color:#999">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <small>© MediLink Admin Panel • Changes are permanent.</small>
+    </footer>
+  </div>
+</div>
+
+<script src="script.js"></script>
+<script>
+  const API = 'http://localhost:8000';
+
+  // Guard: redirect non-admin immediately
+  (function guardAdmin() {
+    try {
+      const user = JSON.parse(localStorage.getItem('medilink_user'));
+      if (!user || user.role !== 'admin') window.location.replace('dashboard.html');
+    } catch { window.location.replace('login.html'); }
+  })();
+
+  function handleLogout() {
+    localStorage.removeItem('medilink_user');
+    window.location.href = 'login.html';
+  }
+
+  function loadUsers() {
+    fetch(`${API}/api/auth/users`)
+      .then(res => res.json())
+      .then(users => {
+        document.getElementById('statTotal').textContent = users.length;
+        document.getElementById('statStaff').textContent = users.filter(u => u.role !== 'admin').length;
+        document.getElementById('statHosps').textContent = new Set(users.map(u => u.hospital_id).filter(Boolean)).size;
+
+        if (!users.length) {
+          document.getElementById('usersTableBody').innerHTML =
+            `<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--muted)">No registered users yet.</td></tr>`;
+          return;
+        }
+
+        document.getElementById('usersTableBody').innerHTML = users.map(u => `
+          <tr>
+            <td><strong>${escHtml(u.name || '—')}</strong></td>
+            <td>${escHtml(u.email)}</td>
+            <td><span class="role-pill ${u.role}">${u.role === 'admin' ? '👑 Admin' : '👤 Staff'}</span></td>
+            <td>${escHtml(u.hospital_name || '—')}</td>
+            <td style="font-family:'DM Mono',monospace;font-size:12px">${escHtml(u.hospital_id || '—')}</td>
+            <td>
+              ${u.role !== 'admin'
+                ? `<button class="btn ghost small" style="color:#dc2626;border-color:#dc2626" onclick="deleteUser(${u.id}, '${escHtml(u.name || u.email)}')">Delete</button>`
+                : `<span style="color:var(--muted);font-size:12px">Protected</span>`
+              }
+            </td>
+          </tr>`).join('');
+      })
+      .catch(() => showToast('Failed to load users', 'error'));
+  }
+
+  function deleteUser(id, name) {
+    if (!confirm(`Delete user "${name}"? This cannot be undone.`)) return;
+    fetch(`${API}/api/auth/users/${id}`, { method: 'DELETE' })
+      .then(res => res.json())
+      .then(() => { showToast(`"${name}" deleted`, 'info'); loadUsers(); })
+      .catch(() => showToast('Failed to delete user', 'error'));
+  }
+
+    document.addEventListener('DOMContentLoaded', () => {
+    applyRoleUI();
+    loadUsers();
+    updateSyncTime();
+  });
+</script>
+</body>
+</html>

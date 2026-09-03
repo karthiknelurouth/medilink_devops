@@ -1,0 +1,647 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Patient Transfers — Hospital Resource</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .tr-hero {
+      background: linear-gradient(130deg, #1a0a10 0%, #2d0f1c 55%, #3a1020 100%);
+      border-radius: var(--radius); padding: 24px 28px;
+      display: flex; align-items: center; justify-content: space-between; gap: 20px;
+      position: relative; overflow: hidden; margin-bottom: 22px;
+      box-shadow: 0 8px 32px rgba(216,27,96,0.18);
+    }
+    .tr-hero::before { content:''; position:absolute; top:-40px; right:-40px; width:200px; height:200px; border-radius:50%; background:radial-gradient(circle,rgba(216,27,96,0.22) 0%,transparent 70%); pointer-events:none; }
+    .tr-hero::after  { content:''; position:absolute; bottom:-40px; left:30%; width:180px; height:180px; border-radius:50%; background:radial-gradient(circle,rgba(232,54,93,0.12) 0%,transparent 70%); pointer-events:none; }
+    .tr-hero-text h1 { font-size:20px; font-weight:700; color:#fff; margin:0 0 5px; letter-spacing:-0.3px; }
+    .tr-hero-text p  { font-size:13px; color:rgba(255,255,255,0.55); margin:0; line-height:1.6; }
+    .tr-hero-stats { display:flex; gap:14px; flex-shrink:0; }
+    .tr-stat-pill { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:12px 16px; text-align:center; min-width:80px; }
+    .tr-stat-pill strong { display:block; font-size:20px; font-weight:700; color:#fff; }
+    .tr-stat-pill span   { font-size:10px; color:rgba(255,255,255,0.45); text-transform:uppercase; letter-spacing:0.7px; }
+
+    .tr-metrics { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:22px; }
+    .tr-metric-card { background:var(--card); border-radius:var(--radius); border:1px solid var(--border); padding:16px 20px; box-shadow:var(--shadow); animation:cardIn 0.4s ease both; transition:transform var(--transition),box-shadow var(--transition); display:flex; align-items:center; gap:14px; }
+    .tr-metric-card:hover { transform:translateY(-2px); box-shadow:var(--shadow-lg); }
+    .tr-metric-icon { width:44px; height:44px; border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
+    .tr-metric-num   { font-size:24px; font-weight:700; color:var(--text); font-family:'DM Mono',monospace; line-height:1; margin-bottom:3px; }
+    .tr-metric-label { font-size:12px; color:var(--muted); font-weight:500; }
+
+    .transfers-list { display:flex; flex-direction:column; gap:14px; }
+    .transfer-card { background:var(--card); border-radius:var(--radius); border:1px solid var(--border); box-shadow:var(--shadow); padding:18px 20px; display:flex; align-items:flex-start; justify-content:space-between; gap:16px; animation:cardIn 0.4s ease both; transition:box-shadow var(--transition),border-color var(--transition),transform var(--transition); }
+    .transfer-card:hover { box-shadow:var(--shadow-lg); border-color:rgba(216,27,96,0.2); transform:translateY(-1px); }
+    .transfer-card.removing { animation:fadeOut 0.35s ease forwards; }
+    .transfer-icon-strip { width:42px; height:42px; border-radius:var(--radius-sm); background:var(--accent-light); display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
+    .transfer-meta { flex:1; min-width:0; }
+    .transfer-id   { font-size:11px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:0.6px; margin-bottom:4px; }
+    .transfer-route { font-size:14px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:8px; }
+    .arrow { color:var(--accent); font-weight:700; margin:0 6px; }
+    .transfer-chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; }
+    .tr-chip { display:flex; align-items:center; gap:5px; background:var(--bg); border:1px solid var(--border); border-radius:999px; padding:3px 10px; font-size:12px; font-weight:500; color:var(--text); }
+    .transfer-actions { display:flex; flex-direction:column; align-items:flex-end; gap:10px; flex-shrink:0; }
+    .transfer-time { font-size:11px; color:var(--muted); font-family:'DM Mono',monospace; text-align:right; }
+
+    /* New Transfer modal */
+    .transfer-modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(4px); z-index: 1000;
+      display: flex; align-items: center; justify-content: center;
+      animation: fadeIn 0.2s ease;
+    }
+    .transfer-modal-overlay.hidden { display: none; }
+    @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+    .transfer-modal-box {
+      background: var(--card); border-radius: var(--radius);
+      border: 1px solid rgba(216,27,96,0.2);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3), 0 4px 20px rgba(216,27,96,0.15);
+      padding: 28px 32px; width: 100%; max-width: 600px;
+      max-height: 90vh; overflow-y: auto;
+      animation: slideUp 0.25s ease; margin: 16px;
+    }
+    @keyframes slideUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+    .transfer-modal-box h3 { margin:0 0 20px; font-size:17px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:8px; }
+    .transfer-modal-box label { font-size:13px; font-weight:600; color:var(--muted); display:flex; flex-direction:column; }
+    .transfer-modal-box label select,
+    .transfer-modal-box label input {
+      margin-top: 6px; width: 100%; padding: 10px 12px;
+      border-radius: var(--radius-sm); border: 1px solid var(--border);
+      background: var(--bg); color: var(--text); font-size: 13.5px;
+      font-family: inherit; outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    .transfer-modal-box label select:focus,
+    .transfer-modal-box label input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+    .staff-from-note { font-size:12px; color:var(--muted); margin-top:4px; padding:8px 12px; background:var(--bg); border-radius:var(--radius-sm); border:1px solid var(--border); }
+
+    /* Status notification modal */
+    .notif-modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(6px); z-index: 2000;
+      display: flex; align-items: center; justify-content: center;
+      animation: fadeIn 0.25s ease;
+    }
+    .notif-modal-overlay.hidden { display: none; }
+    .notif-modal-box {
+      background: var(--card); border-radius: 20px;
+      border: 1px solid var(--border);
+      box-shadow: 0 30px 80px rgba(0,0,0,0.4);
+      padding: 36px 40px; width: 100%; max-width: 480px;
+      max-height: 90vh; overflow-y: auto;
+      animation: slideUp 0.3s cubic-bezier(0.34,1.56,0.64,1);
+      margin: 16px; text-align: center;
+    }
+    .notif-modal-icon { font-size: 56px; margin-bottom: 16px; display: block; }
+    .notif-modal-title { font-size: 22px; font-weight: 800; color: var(--text); margin: 0 0 8px; }
+    .notif-modal-sub   { font-size: 14px; color: var(--muted); margin: 0 0 24px; line-height: 1.6; }
+    .notif-modal-details {
+      background: var(--bg); border-radius: var(--radius);
+      border: 1px solid var(--border); padding: 16px 20px;
+      text-align: left; margin-bottom: 24px;
+    }
+    .notif-modal-details .detail-row { display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid var(--border); font-size:13.5px; }
+    .notif-modal-details .detail-row:last-child { border-bottom:none; }
+    .notif-modal-details .detail-label { color:var(--muted); font-weight:600; }
+    .notif-modal-details .detail-value { color:var(--text); font-weight:600; text-align:right; }
+    .notif-modal-nav { display:flex; align-items:center; justify-content:center; gap:12px; margin-bottom:20px; font-size:13px; color:var(--muted); }
+    .notif-modal-nav-dot { width:8px; height:8px; border-radius:50%; background:var(--border); transition:background 0.2s; }
+    .notif-modal-nav-dot.active { background:var(--accent); }
+    .notif-approved .notif-modal-title { color: #15803d; }
+    .notif-approved .notif-modal-icon-wrap { background: rgba(34,197,94,0.1); border-radius: 50%; width:88px; height:88px; display:flex; align-items:center; justify-content:center; margin:0 auto 16px; font-size:44px; }
+    .notif-rejected .notif-modal-title { color: #dc2626; }
+    .notif-rejected .notif-modal-icon-wrap { background: rgba(239,68,68,0.1); border-radius: 50%; width:88px; height:88px; display:flex; align-items:center; justify-content:center; margin:0 auto 16px; font-size:44px; }
+
+    .tr-section-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:var(--muted); margin:0 0 12px; display:flex; align-items:center; gap:8px; }
+    .tr-section-label::after { content:''; flex:1; height:1px; background:var(--border); }
+    .tr-tabs { display:flex; gap:8px; margin-bottom:16px; }
+    .tr-tab { padding:8px 18px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--card); font-size:13px; font-weight:600; color:var(--muted); cursor:pointer; font-family:inherit; transition:all var(--transition); display:flex; align-items:center; gap:6px; }
+    .tr-tab:hover { border-color:var(--accent); color:var(--accent); }
+    .tr-tab.active { background:var(--accent); border-color:var(--accent); color:#fff; box-shadow:0 4px 14px rgba(216,27,96,0.3); }
+    .tr-tab-badge { background:rgba(255,255,255,0.25); color:inherit; font-size:11px; font-weight:700; padding:1px 7px; border-radius:999px; min-width:18px; text-align:center; }
+    .tr-tab:not(.active) .tr-tab-badge { background:var(--accent-light); color:var(--accent); }
+
+    @media (max-width:900px)  { .tr-metrics { grid-template-columns:1fr 1fr; } .tr-hero-stats { display:none; } }
+    @media (max-width:640px)  { .tr-metrics { grid-template-columns:1fr; } .transfer-card { flex-direction:column; } .transfer-actions { flex-direction:row; align-items:center; width:100%; justify-content:space-between; } .notif-modal-box { padding:24px 20px; } }
+  </style>
+  <script>
+    (function() {
+      try {
+        const user = JSON.parse(localStorage.getItem('medilink_user'));
+        if (user && user.role === 'admin') {
+          const style = document.createElement('style');
+          style.textContent = '.my-hospital-pill { display: none !important; }';
+          document.head.appendChild(style);
+        }
+      } catch(e) {}
+    })();
+  </script>
+</head>
+<body>
+  <div id="app">
+
+    <aside class="sidebar" id="sidebar">
+      <div class="brand"><img src="medilink-logo.png" class="brand-logo" alt="MediLink" /></div>
+      <nav class="nav">
+        <a class="nav-link" href="dashboard.html"><span class="nav-icon">📊</span><span class="nav-label">Dashboard</span></a>
+        <a class="nav-link" href="inventory.html"><span class="nav-icon">📦</span><span class="nav-label">Inventory</span></a>
+        <a class="nav-link active" href="transfers.html"><span class="nav-icon">🔄</span><span class="nav-label">Patient Transfers</span></a>
+        <a class="nav-link" href="disease-prediction.html"><span class="nav-icon">🔬</span><span class="nav-label">Disease Prediction</span></a>
+        <a class="nav-link" href="shortage-prediction.html"><span class="nav-icon">💊</span><span class="nav-label">Shortage Prediction</span></a>
+        <a class="nav-link" href="faqs.html"><span class="nav-icon">❓</span><span class="nav-label">FAQs</span></a>
+      </nav>
+      <div class="sidebar-help"><a href="faqs.html" class="help-link"><span class="help-icon">?</span><span class="help-label">Help &amp; Support</span></a></div>
+      <div class="sidebar-sync" id="sidebarSync">
+        <div class="sync-dot" id="syncDot"></div>
+        <div class="sync-text"><div class="sync-label">Last synced</div><div class="sync-time" id="syncTime">--:--</div></div>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="header">
+        <div class="header-left">
+          <h2>Patient Transfers</h2>
+          <a href="my-hospital.html" class="my-hospital-pill" title="View my hospital dashboard">
+            <span class="pill-icon">🏥</span>
+            <span class="pill-name"><span class="pill-label">My Hospital</span><span class="pill-hosp" id="pillHospName">My Hospital</span></span>
+          </a>
+        </div>
+        <div class="header-right">
+          <button class="btn" id="newTransferBtn" onclick="openNewTransferForm()">+ New Request</button>
+          <div class="notif-wrapper">
+            <button class="icon-btn" id="notifBtn2" aria-label="Notifications">🔔</button>
+            <span id="notifBadge2" class="badge">0</span>
+            <div class="notif-panel" id="notifPanel2">
+              <div class="notif-panel-header">Notifications <span id="notifPanelCount2"></span></div>
+              <div class="notif-list" id="notifList2"></div>
+              <div class="notif-panel-footer"><a onclick="goToTransfers()">View all transfers &rarr;</a></div>
+            </div>
+          </div>
+          <div class="profile-wrapper">
+            <button class="profile-btn" id="profileBtn" aria-label="Hospital profile"><span class="profile-avatar-icon">🏥</span></button>
+            <div class="profile-panel" id="profilePanel">
+              <div class="profile-panel-top">
+                <div class="profile-panel-avatar" id="profileAvatar">🏥</div>
+                <div><div class="profile-panel-name" id="profileName">—</div><div class="profile-panel-role" id="profileRole">—</div></div>
+              </div>
+              <div class="profile-panel-body">
+                <div class="pd-row"><span class="pd-label">Hospital ID</span><span class="pd-value" id="pdHospitalId">—</span></div>
+                <div class="pd-row"><span class="pd-label">Hospital</span><span class="pd-value" id="pdHospitalName">—</span></div>
+                <div class="pd-row"><span class="pd-label">Name</span><span class="pd-value" id="pdName">—</span></div>
+                <div class="pd-row"><span class="pd-label">Email</span><span class="pd-value" id="pdEmail">—</span></div>
+                <div class="pd-row"><span class="pd-label">Role</span><span class="pd-value" id="pdRole">—</span></div>
+                <div class="pd-row"><span class="pd-label">Permissions</span><span class="pd-value" id="pdPermissions">—</span></div>
+              </div>
+              <div class="profile-panel-footer">
+                <button class="profile-logout-btn" onclick="localStorage.removeItem('medilink_user');window.location.href='login.html'">⏻ Logout</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div class="tr-hero">
+        <div class="tr-hero-text">
+          <h1>🔄 Patient Transfer Requests</h1>
+          <p>Manage and coordinate inter-hospital patient transfers and emergency routing.</p>
+        </div>
+        <div class="tr-hero-stats">
+          <div class="tr-stat-pill"><strong id="statTotal">–</strong><span>Total</span></div>
+          <div class="tr-stat-pill"><strong id="statCritical">–</strong><span>Critical</span></div>
+          <div class="tr-stat-pill"><strong id="statPending">–</strong><span>Pending</span></div>
+        </div>
+      </div>
+
+      <div class="tr-metrics">
+        <div class="tr-metric-card" style="animation-delay:0s">
+          <div class="tr-metric-icon" style="background:var(--accent-light)">🧑‍⚕️</div>
+          <div class="tr-metric-body"><div class="tr-metric-num" id="metricTotal">–</div><div class="tr-metric-label">Total Patients</div></div>
+        </div>
+        <div class="tr-metric-card" style="animation-delay:0.08s">
+          <div class="tr-metric-icon" style="background:rgba(59,130,246,0.1)">⏳</div>
+          <div class="tr-metric-body"><div class="tr-metric-num" id="metricPending">–</div><div class="tr-metric-label">Pending Approval</div></div>
+        </div>
+        <div class="tr-metric-card" style="animation-delay:0.16s">
+          <div class="tr-metric-icon" style="background:rgba(239,68,68,0.1)">🚨</div>
+          <div class="tr-metric-body"><div class="tr-metric-num" id="metricCritical">–</div><div class="tr-metric-label">Critical / Emergency</div></div>
+        </div>
+      </div>
+
+      <section class="transfers">
+        <div class="tr-tabs">
+          <button class="tr-tab active" id="tabActive" onclick="switchTab('active')">🔄 Active Requests <span class="tr-tab-badge" id="tabActiveBadge"></span></button>
+          <button class="tr-tab" id="tabHistory" onclick="switchTab('history')">📋 Transfer History <span class="tr-tab-badge" id="tabHistoryBadge"></span></button>
+        </div>
+        <div class="transfers-list" id="transferList"></div>
+      </section>
+
+      <footer class="footer"><small>Accept / Reject actions update the database.</small></footer>
+    </div>
+  </div>
+
+  <!-- New Transfer modal -->
+  <div id="newTransferModal" class="transfer-modal-overlay hidden">
+    <div class="transfer-modal-box">
+      <h3>➕ New Patient Transfer Request</h3>
+      <div class="form-grid" id="newTransferFormGrid"></div>
+      <div class="modal-actions" style="margin-top:20px">
+        <button class="btn" onclick="submitNewTransfer()">Submit Request</button>
+        <button class="btn ghost" onclick="closeNewTransferModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Transfer detail modal -->
+  <div id="transferModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <h3 id="modalTitle">Transfer Request</h3>
+      <div id="modalBody"></div>
+      <div class="modal-actions">
+        <button class="btn" id="modalAccept">✅ Accept</button>
+        <button class="btn ghost" id="modalReject">❌ Reject</button>
+        <button class="btn ghost" onclick="closeModal('transferModal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Status notification modal -->
+  <div id="statusNotifModal" class="notif-modal-overlay hidden">
+    <div class="notif-modal-box" id="statusNotifBox">
+      <!-- filled by JS -->
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    const API = 'http://localhost:8000';
+    DUMMY.transfers = [];
+
+    const urgencyColors = {
+      Critical:  { bg:'rgba(239,68,68,0.1)',  icon:'🚨' },
+      Emergency: { bg:'rgba(239,68,68,0.1)',  icon:'🚑' },
+      Urgent:    { bg:'rgba(245,158,11,0.1)', icon:'⚡' },
+      Normal:    { bg:'rgba(34,197,94,0.1)',  icon:'🧑‍⚕️' },
+      Pending:   { bg:'rgba(59,130,246,0.1)', icon:'🔄' },
+      Approved:  { bg:'rgba(34,197,94,0.1)',  icon:'✅' },
+      Rejected:  { bg:'rgba(239,68,68,0.1)',  icon:'❌' },
+    };
+
+    let _currentTab = 'active';
+    let _allTransfers = [];
+    let _prevStatuses = {};
+    let _notifQueue = [];
+    let _notifIndex = 0;
+
+    // ── Status notification modal ──
+    function showStatusNotifModal(notifications) {
+      if (!notifications.length) return;
+      _notifQueue = notifications;
+      _notifIndex = 0;
+      renderNotifModal();
+      document.getElementById('statusNotifModal').classList.remove('hidden');
+    }
+
+    function renderNotifModal() {
+      const t    = _notifQueue[_notifIndex];
+      const box  = document.getElementById('statusNotifBox');
+      const isApproved = t.status === 'Approved';
+      const cls  = isApproved ? 'notif-approved' : 'notif-rejected';
+      const icon = isApproved ? '✅' : '❌';
+      const title= isApproved ? 'Transfer Approved!' : 'Transfer Rejected';
+      const sub  = isApproved
+        ? `Your transfer request was accepted by <strong>${escHtml(t.to_hospital)}</strong>.`
+        : `Your transfer request was rejected by <strong>${escHtml(t.to_hospital)}</strong>.`;
+
+      const navDots = _notifQueue.length > 1
+        ? `<div class="notif-modal-nav">
+            ${_notifQueue.map((_, i) => `<div class="notif-modal-nav-dot${i===_notifIndex?' active':''}"></div>`).join('')}
+            <span>${_notifIndex+1} of ${_notifQueue.length}</span>
+           </div>`
+        : '';
+
+      const nextBtn = _notifIndex < _notifQueue.length - 1
+        ? `<button class="btn" onclick="nextNotif()" style="min-width:120px">Next →</button>`
+        : `<button class="btn" onclick="dismissNotifModal()" style="min-width:120px">Got it</button>`;
+
+      box.className = `notif-modal-box ${cls}`;
+      box.innerHTML = `
+        <div class="${isApproved ? 'notif-approved' : 'notif-rejected'}">
+          <div class="${isApproved ? 'notif-approved' : 'notif-rejected'}-icon-wrap" style="background:${isApproved?'rgba(34,197,94,0.1)':'rgba(239,68,68,0.1)'};border-radius:50%;width:88px;height:88px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:44px;">${icon}</div>
+          <div class="notif-modal-title">${title}</div>
+          <div class="notif-modal-sub">${sub}</div>
+          <div class="notif-modal-details">
+            <div class="detail-row"><span class="detail-label">Transfer ID</span><span class="detail-value">#${t.id}</span></div>
+            <div class="detail-row"><span class="detail-label">Patient</span><span class="detail-value">${escHtml(t.patient_name)}${t.age?', Age '+t.age:''}</span></div>
+            <div class="detail-row"><span class="detail-label">Condition</span><span class="detail-value">${escHtml(t.condition_name)}</span></div>
+            <div class="detail-row"><span class="detail-label">From</span><span class="detail-value">${escHtml(t.from_hospital)}</span></div>
+            <div class="detail-row"><span class="detail-label">To</span><span class="detail-value">${escHtml(t.to_hospital)}</span></div>
+            <div class="detail-row"><span class="detail-label">Urgency</span><span class="detail-value">${renderPill(t.urgency)}</span></div>
+            <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value">${renderPill(t.status)}</span></div>
+          </div>
+          ${navDots}
+          <div style="display:flex;gap:10px;justify-content:center;">
+            ${nextBtn}
+            ${_notifQueue.length > 1 ? `<button class="btn ghost" onclick="dismissNotifModal()">Dismiss All</button>` : ''}
+          </div>
+        </div>`;
+    }
+
+    function nextNotif() {
+      _notifIndex++;
+      renderNotifModal();
+    }
+
+    function dismissNotifModal() {
+      document.getElementById('statusNotifModal').classList.add('hidden');
+    }
+
+    // ── Status tracking ──
+    function initStatusTracking() {
+      const user = getUser();
+      if (!user || !user.hospital_name) return;
+
+      const seenKey = `medilink_seen_${user.email}`;
+      const seen    = JSON.parse(localStorage.getItem(seenKey) || '{}');
+
+      fetch(`${API}/api/transfers`)
+        .then(res => res.json())
+        .then(data => {
+          const sent      = data.filter(t => t.from_hospital === user.hospital_name);
+          const unseen    = [];
+
+          sent.forEach(t => {
+            if (t.status !== 'Pending' && !seen[t.id]) {
+              unseen.push(t);
+              seen[t.id] = true;
+            }
+            _prevStatuses[t.id] = t.status;
+          });
+
+          localStorage.setItem(seenKey, JSON.stringify(seen));
+
+          if (unseen.length) showStatusNotifModal(unseen);
+
+          startStatusPolling(user.hospital_name, seenKey);
+        });
+    }
+
+    function startStatusPolling(hospitalName, seenKey) {
+      setInterval(() => {
+        const seen = JSON.parse(localStorage.getItem(seenKey) || '{}');
+        fetch(`${API}/api/transfers`)
+          .then(res => res.json())
+          .then(data => {
+            const newNotifs = [];
+            data.filter(t => t.from_hospital === hospitalName).forEach(t => {
+              const prev = _prevStatuses[t.id];
+              if (prev && prev === 'Pending' && t.status !== 'Pending' && !seen[t.id]) {
+                newNotifs.push(t);
+                seen[t.id] = true;
+              }
+              _prevStatuses[t.id] = t.status;
+            });
+            if (newNotifs.length) {
+              localStorage.setItem(seenKey, JSON.stringify(seen));
+              showStatusNotifModal(newNotifs);
+            }
+          });
+      }, 10000);
+    }
+
+    // ── Transfers ──
+    function switchTab(tab) {
+      _currentTab = tab;
+      document.getElementById('tabActive').classList.toggle('active', tab === 'active');
+      document.getElementById('tabHistory').classList.toggle('active', tab === 'history');
+      renderTransferList();
+    }
+
+    function renderTransferList() {
+      const list    = document.getElementById('transferList');
+      const active  = _allTransfers.filter(t => t.status === 'Pending');
+      const history = _allTransfers.filter(t => t.status !== 'Pending');
+      const data    = _currentTab === 'active' ? active : history;
+
+      if (!data.length) {
+        const msg  = _currentTab === 'active' ? 'No active transfer requests.' : 'No completed transfers yet.';
+        const icon = _currentTab === 'active' ? '✅' : '📋';
+        list.innerHTML = `<div class="empty-state"><div class="empty-icon">${icon}</div><p>${msg}</p></div>`;
+        return;
+      }
+
+      list.innerHTML = data.map((t, i) => {
+        const c = urgencyColors[t.urgency] || urgencyColors.Normal;
+        return `
+        <div class="transfer-card" id="transfer-${t.id}" style="animation-delay:${i*80}ms">
+          <div class="transfer-icon-strip" style="background:${c.bg};font-size:22px">${c.icon}</div>
+          <div class="transfer-meta">
+            <div class="transfer-id">Transfer #${t.id}</div>
+            <div class="transfer-route">${escHtml(t.from_hospital)} <span class="arrow">→</span> ${escHtml(t.to_hospital)}</div>
+            <div class="transfer-chips">
+              <span class="tr-chip">🧑‍⚕️ ${escHtml(t.patient_name)}</span>
+              ${t.age ? `<span class="tr-chip">🎂 Age: ${t.age}</span>` : ''}
+              ${t.gender ? `<span class="tr-chip">${t.gender==='Male'?'♂️':t.gender==='Female'?'♀️':'⚧️'} ${t.gender}</span>` : ''}
+              <span class="tr-chip">🩺 ${escHtml(t.condition_name)}</span>
+              <span class="tr-chip">${renderPill(t.urgency)}</span>
+              <span class="tr-chip">${renderPill(t.status)}</span>
+            </div>
+            ${t.notes ? `<div style="font-size:12px;color:var(--muted)">${escHtml(t.notes)}</div>` : ''}
+          </div>
+          <div class="transfer-actions">
+            <span class="transfer-time">🕐 ${t.created_at ? new Date(t.created_at).toLocaleString() : '–'}</span>
+            <button class="btn small outline-accent" onclick="openTransferDetailModal(${t.id})">View Details</button>
+            ${isAdmin() ? `<button class="btn ghost small" style="color:#dc2626;border-color:#dc2626" onclick="deleteTransfer(${t.id})">Remove</button>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function populateTransfers() {
+      const list = document.getElementById('transferList');
+      if (!list) return;
+      list.innerHTML = `<div style="text-align:center;padding:24px;color:#999">Loading…</div>`;
+
+      fetch(`${API}/api/transfers`)
+        .then(res => res.json())
+        .then(data => {
+          _allTransfers = data;
+          const total    = data.length;
+          const critical = data.filter(t => ['Critical','Emergency'].includes(t.urgency) && t.status === 'Pending').length;
+          const pending  = data.filter(t => t.status === 'Pending').length;
+          const history  = data.filter(t => t.status !== 'Pending').length;
+
+          const set = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
+          set('statTotal',     total);
+          set('statCritical',  critical);
+          set('statPending',   pending);
+          set('metricTotal',   total);
+          set('metricPending', pending);
+          set('metricCritical',critical);
+          document.getElementById('tabActiveBadge').textContent  = pending  || '';
+          document.getElementById('tabHistoryBadge').textContent = history  || '';
+
+          ['notifBadge','notifBadge2'].forEach(id => { const el=document.getElementById(id); if(el) el.textContent=pending; });
+          updateNotifPanel(data.filter(t => t.status === 'Pending'));
+          renderTransferList();
+        })
+        .catch(() => {
+          list.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><p>Failed to load transfers.</p></div>`;
+          showToast('Failed to load transfers', 'error');
+        });
+    }
+
+    function updateNotifPanel(pending) {
+      ['notifList','notifList2'].forEach(id => {
+        const el = document.getElementById(id); if (!el) return;
+        if (!pending.length) { el.innerHTML = '<div class="notif-empty">No pending transfers</div>'; return; }
+        el.innerHTML = pending.map(t => {
+          const dotClass = ['Critical','Emergency'].includes(t.urgency) ? 'critical' : t.urgency==='Urgent' ? 'urgent' : 'normal';
+          return `<div class="notif-item">
+            <div class="notif-dot ${dotClass}"></div>
+            <div class="notif-body">
+              <div class="notif-title">${escHtml(t.urgency)} — ${escHtml(t.patient_name)}</div>
+              <div class="notif-sub">${escHtml(t.from_hospital)} → ${escHtml(t.to_hospital)}</div>
+              <div class="notif-sub">🩺 ${escHtml(t.condition_name)}</div>
+              <div class="notif-time">${t.created_at ? new Date(t.created_at).toLocaleString() : '–'}</div>
+            </div>
+          </div>`;
+        }).join('');
+      });
+      ['notifPanelCount','notifPanelCount2'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = pending.length ? `(${pending.length})` : '';
+      });
+    }
+
+    function openTransferDetailModal(id) {
+      fetch(`${API}/api/transfers`)
+        .then(res => res.json())
+        .then(data => {
+          const t = data.find(x => x.id === id); if (!t) return;
+          const user   = getUser();
+          const canAct = isAdmin() || (user && user.hospital_name === t.to_hospital);
+
+          document.getElementById('modalTitle').textContent = `Transfer #${t.id} — ${t.patient_name}`;
+          document.getElementById('modalBody').innerHTML = `
+            <p><strong>Patient:</strong> ${escHtml(t.patient_name)}${t.age?`, Age ${t.age}`:''}${t.gender?` (${t.gender})`:''}</p>
+            <p><strong>Condition:</strong> ${escHtml(t.condition_name)}</p>
+            <p><strong>From:</strong> ${escHtml(t.from_hospital)}</p>
+            <p><strong>To:</strong> ${escHtml(t.to_hospital)}</p>
+            <p><strong>Urgency:</strong> ${renderPill(t.urgency)}</p>
+            <p><strong>Status:</strong> ${renderPill(t.status)}</p>
+            ${t.notes ? `<p><strong>Notes:</strong> ${escHtml(t.notes)}</p>` : ''}
+            <p><strong>Requested:</strong> ${t.created_at ? new Date(t.created_at).toLocaleString() : '–'}</p>
+            ${!canAct ? `<p style="font-size:12px;color:var(--muted);margin-top:8px;padding:8px 12px;background:var(--bg);border-radius:var(--radius-sm);border:1px solid var(--border)">
+              ℹ️ ${user&&user.hospital_name===t.from_hospital?'You sent this request — only the receiving hospital can accept or reject it.':'Only the receiving hospital or admin can act on this request.'}
+            </p>` : ''}`;
+
+          const acceptBtn = document.getElementById('modalAccept');
+          const rejectBtn = document.getElementById('modalReject');
+          if (canAct && t.status === 'Pending') {
+            acceptBtn.style.display = ''; rejectBtn.style.display = '';
+            acceptBtn.onclick = () => { updateTransferStatus(id,'Approved'); closeModal('transferModal'); };
+            rejectBtn.onclick  = () => { updateTransferStatus(id,'Rejected'); closeModal('transferModal'); };
+          } else {
+            acceptBtn.style.display = 'none'; rejectBtn.style.display = 'none';
+          }
+          document.getElementById('transferModal').classList.remove('hidden');
+        });
+    }
+
+    function updateTransferStatus(id, status) {
+      fetch(`${API}/api/transfers/${id}`, {
+        method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({status})
+      })
+        .then(res => res.json())
+        .then(() => { showToast(`Transfer #${id} marked as ${status}`, status==='Approved'?'success':'error'); populateTransfers(); })
+        .catch(() => showToast('Failed to update transfer', 'error'));
+    }
+
+    function deleteTransfer(id) {
+      if (!confirm('Remove this transfer request?')) return;
+      fetch(`${API}/api/transfers/${id}`, {method:'DELETE'})
+        .then(res => res.json())
+        .then(() => { showToast(`Transfer #${id} removed`, 'info'); populateTransfers(); })
+        .catch(() => showToast('Failed to remove transfer', 'error'));
+    }
+
+    function closeNewTransferModal() { document.getElementById('newTransferModal').classList.add('hidden'); }
+
+    function openNewTransferForm() {
+      const grid = document.getElementById('newTransferFormGrid');
+      grid.innerHTML = `<div style="text-align:center;padding:16px;color:var(--muted)">Loading hospitals…</div>`;
+      document.getElementById('newTransferModal').classList.remove('hidden');
+
+      fetch(`${API}/api/auth/users`)
+        .then(res => res.json())
+        .then(users => {
+          const hospitals    = [...new Set(users.filter(u=>u.role!=='admin'&&u.hospital_name).map(u=>u.hospital_name))];
+          const currentUser  = getUser();
+          const isStaff      = !isAdmin();
+          const userHospital = currentUser?.hospital_name || '';
+          const hospOptions  = hospitals.map(h=>`<option value="${escHtml(h)}">${escHtml(h)}</option>`).join('');
+          const toFiltered   = hospitals.filter(h=>h!==userHospital).map(h=>`<option value="${escHtml(h)}">${escHtml(h)}</option>`).join('');
+          window._transferHospitals = hospitals;
+
+          const fromField = isStaff
+            ? `<label>From Hospital<input id="ntFrom" value="${escHtml(userHospital)}" readonly style="background:var(--bg);color:var(--muted);cursor:not-allowed" /><span class="staff-from-note">📍 Your hospital is set as the source</span></label>`
+            : `<label>From Hospital<select id="ntFrom" onchange="updateToHospitalList()"><option value="">Select hospital</option>${hospOptions}</select></label>`;
+
+          grid.innerHTML = `
+            <label>Patient Name<input id="ntPatient" placeholder="Full name" /></label>
+            <label>Age<input id="ntAge" type="number" min="0" max="150" placeholder="e.g. 45" /></label>
+            <label>Gender<select id="ntGender"><option value="">Select</option><option>Male</option><option>Female</option><option>Other</option></select></label>
+            <label>Condition / Diagnosis<input id="ntCondition" placeholder="e.g. Acute MI, Stroke" /></label>
+            ${fromField}
+            <label>To Hospital<select id="ntTo"><option value="">Select hospital</option>${isStaff?toFiltered:hospOptions}</select></label>
+            <label>Urgency<select id="ntUrgency"><option value="Normal">Normal</option><option value="Urgent">Urgent</option><option value="Critical">Critical</option><option value="Emergency">Emergency</option></select></label>
+            <label style="grid-column:1/-1">Notes<input id="ntNotes" placeholder="Additional notes (optional)" /></label>`;
+        })
+        .catch(() => { showToast('Failed to load hospitals', 'error'); closeNewTransferModal(); });
+    }
+
+    function updateToHospitalList() {
+      const fromVal  = document.getElementById('ntFrom')?.value;
+      const toSelect = document.getElementById('ntTo'); if (!toSelect) return;
+      const prevTo   = toSelect.value;
+      toSelect.innerHTML = '<option value="">Select hospital</option>' +
+        (window._transferHospitals||[]).filter(h=>h!==fromVal)
+          .map(h=>`<option value="${escHtml(h)}"${h===prevTo?' selected':''}>${escHtml(h)}</option>`).join('');
+    }
+
+    function submitNewTransfer() {
+      const patient   = document.getElementById('ntPatient')?.value.trim();
+      const age       = document.getElementById('ntAge')?.value;
+      const gender    = document.getElementById('ntGender')?.value;
+      const condition = document.getElementById('ntCondition')?.value.trim();
+      const from      = document.getElementById('ntFrom')?.value;
+      const to        = document.getElementById('ntTo')?.value;
+      const urgency   = document.getElementById('ntUrgency')?.value;
+      const notes     = document.getElementById('ntNotes')?.value.trim();
+
+      if (!patient||!condition||!from||!to) { showToast('Please fill all required fields','error'); return; }
+      if (from===to) { showToast('From and To hospitals must be different','error'); return; }
+
+      fetch(`${API}/api/transfers`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({patient_name:patient,age:age||null,gender:gender||null,condition_name:condition,from_hospital:from,to_hospital:to,urgency,notes})
+      })
+        .then(res=>res.json())
+        .then(()=>{ showToast('Transfer request created','success'); closeNewTransferModal(); populateTransfers(); })
+        .catch(()=>showToast('Failed to create transfer','error'));
+    }
+
+    document.getElementById('newTransferModal')?.addEventListener('click', e => {
+      if (e.target===document.getElementById('newTransferModal')) closeNewTransferModal();
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      applyRoleUI();
+      document.getElementById('newTransferBtn').style.display = '';
+      populateTransfers();
+      initStatusTracking();
+      document.getElementById('notifBtn2')?.addEventListener('click', () => _toggleNotifPanel('notifPanel2'));
+    });
+  </script>
+</body>
+</html>

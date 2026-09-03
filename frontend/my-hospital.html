@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>My Hospital — Capital Gate Hospital</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .db-hero {
+      background: linear-gradient(130deg, #1a0a10 0%, #2d0f1c 55%, #3a1020 100%);
+      border-radius: var(--radius);
+      padding: 24px 28px;
+      display: flex; align-items: center; justify-content: space-between; gap: 20px;
+      position: relative; overflow: hidden;
+      margin-bottom: 22px;
+      box-shadow: 0 8px 32px rgba(216,27,96,0.18);
+    }
+    .db-hero::before {
+      content: ''; position: absolute; top: -40px; right: -40px;
+      width: 220px; height: 220px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(216,27,96,0.22) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .db-hero::after {
+      content: ''; position: absolute; bottom: -50px; left: 30%;
+      width: 200px; height: 200px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(232,54,93,0.1) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .db-hero-text { z-index: 1; }
+    .db-hero-text h1 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 5px; letter-spacing: -0.3px; }
+    .db-hero-text p  { font-size: 13px; color: rgba(255,255,255,0.55); margin: 0; line-height: 1.6; max-width: 480px; }
+    .db-hero-stats { display: flex; gap: 14px; flex-shrink: 0; z-index: 1; }
+    .db-stat-pill {
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px; padding: 12px 18px; text-align: center; min-width: 85px;
+    }
+    .db-stat-pill strong { display: block; font-size: 22px; font-weight: 700; color: #fff; font-family: 'DM Mono', monospace; }
+    .db-stat-pill span   { font-size: 10px; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 0.7px; }
+
+    .hosp-info-card {
+      background: var(--card); border-radius: var(--radius);
+      border: 1px solid var(--border); box-shadow: var(--shadow);
+      padding: 20px 24px; margin-bottom: 22px;
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+    }
+    .hosp-info-left { display: flex; align-items: center; gap: 16px; }
+    .hosp-avatar {
+      width: 52px; height: 52px; border-radius: var(--radius-sm);
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(216,27,96,0.25);
+    }
+    .hosp-name { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+    .hosp-meta { font-size: 12px; color: var(--muted); display: flex; gap: 14px; flex-wrap: wrap; }
+    .hosp-meta span { display: flex; align-items: center; gap: 4px; }
+    .hosp-status-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 14px; border-radius: 999px;
+      font-size: 12px; font-weight: 700;
+    }
+    .hosp-status-pill.emergency { background: rgba(239,68,68,0.1); color: #dc2626; border: 1px solid rgba(239,68,68,0.2); }
+    .hosp-status-pill.critical  { background: rgba(216,27,96,0.1);  color: var(--accent); border: 1px solid rgba(216,27,96,0.2); }
+    .hosp-status-pill.normal    { background: rgba(34,197,94,0.1);  color: #15803d; border: 1px solid rgba(34,197,94,0.2); }
+    .hosp-status-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+    @media (max-width: 900px) { .db-hero-stats { display: none; } }
+    @media (max-width: 640px) { .db-hero { padding: 20px; } .db-hero-text h1 { font-size: 17px; } }
+  </style>
+  <script>
+    (function() {
+      try {
+        const user = JSON.parse(localStorage.getItem('medilink_user'));
+        if (user && user.role === 'admin') {
+          const style = document.createElement('style');
+          style.textContent = '.my-hospital-pill { display: none !important; }';
+          document.head.appendChild(style);
+        }
+      } catch(e) {}
+    })();
+  </script>
+</head>
+<body>
+  <div id="app">
+
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <img src="medilink-logo.png" class="brand-logo" alt="MediLink" />
+      </div>
+      <nav class="nav">
+        <a class="nav-link" href="dashboard.html"><span class="nav-icon">📊</span><span class="nav-label">Dashboard</span></a>
+        <a class="nav-link" href="inventory.html"><span class="nav-icon">📦</span><span class="nav-label">Inventory</span></a>
+        <a class="nav-link" href="transfers.html"><span class="nav-icon">🔄</span><span class="nav-label">Patient Transfers</span></a>
+        <a class="nav-link" href="disease-prediction.html"><span class="nav-icon">🔬</span><span class="nav-label">Disease Prediction</span></a>
+        <a class="nav-link" href="shortage-prediction.html"><span class="nav-icon">💊</span><span class="nav-label">Shortage Prediction</span></a>
+        <a class="nav-link" href="faqs.html"><span class="nav-icon">❓</span><span class="nav-label">FAQs</span></a>
+      </nav>
+      <div class="sidebar-help">
+        <a href="faqs.html" class="help-link">
+          <span class="help-icon">?</span>
+          <span class="help-label">Help &amp; Support</span>
+        </a>
+      </div>
+      <div class="sidebar-sync" id="sidebarSync">
+        <div class="sync-dot" id="syncDot"></div>
+        <div class="sync-text">
+          <div class="sync-label">Last synced</div>
+          <div class="sync-time" id="syncTime">--:--</div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="header">
+        <div class="header-left">
+          <h2>My Hospital</h2>
+          <a href="my-hospital.html" class="my-hospital-pill" title="My Hospital">
+            <span class="pill-icon">🏥</span>
+            <span class="pill-name">
+              <span class="pill-label">My Hospital</span>
+              <span class="pill-hosp" id="pillHospName">My Hospital</span>
+            </span>
+          </a>
+        </div>
+        <div class="header-right">
+          <button class="btn" onclick="openStatsModal()">✏️ Update Stats</button>
+          <div class="filter-group">
+            <select id="filterPeriod" aria-label="Filter period">
+              <option value="day">Day</option>
+              <option value="week" selected>Week</option>
+              <option value="month">Month</option>
+              <option value="year">Year</option>
+            </select>
+          </div>
+          <div class="notif-wrapper">
+            <button id="notifBtn" class="icon-btn" aria-label="Notifications" title="Notifications">🔔</button>
+            <span id="notifBadge" class="badge">0</span>
+            <div class="notif-panel" id="notifPanel">
+              <div class="notif-panel-header">Notifications <span id="notifPanelCount"></span></div>
+              <div class="notif-list" id="notifList"></div>
+              <div class="notif-panel-footer"><a onclick="goToTransfers()">View all transfers &rarr;</a></div>
+            </div>
+          </div>
+          <div class="profile-wrapper">
+            <button class="profile-btn" id="profileBtn" aria-label="Hospital profile">
+              <span class="profile-avatar-icon">🏥</span>
+            </button>
+            <div class="profile-panel" id="profilePanel">
+              <div class="profile-panel-top">
+                <div class="profile-panel-avatar" id="profileAvatar">🏥</div>
+                <div>
+                  <div class="profile-panel-name" id="profileName">—</div>
+                  <div class="profile-panel-role" id="profileRole">—</div>
+                </div>
+              </div>
+              <div class="profile-panel-body">
+                <div class="pd-row"><span class="pd-label">Hospital ID</span><span class="pd-value" id="pdHospitalId">—</span></div>
+                <div class="pd-row"><span class="pd-label">Hospital</span><span class="pd-value" id="pdHospitalName">—</span></div>
+                <div class="pd-row"><span class="pd-label">Name</span><span class="pd-value" id="pdName">—</span></div>
+                <div class="pd-row"><span class="pd-label">Email</span><span class="pd-value" id="pdEmail">—</span></div>
+                <div class="pd-row"><span class="pd-label">Role</span><span class="pd-value" id="pdRole">—</span></div>
+                <div class="pd-row"><span class="pd-label">Permissions</span><span class="pd-value" id="pdPermissions">—</span></div>
+              </div>
+              <div class="profile-panel-footer">
+                <button class="profile-logout-btn" onclick="localStorage.removeItem('medilink_user');window.location.href='login.html'">⏻ Logout</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Hero -->
+      <div class="db-hero">
+        <div class="db-hero-text">
+          <h1 id="heroHospName">🏥 —</h1>
+          <p id="heroHospMeta">—</p>
+        </div>
+        <div class="db-hero-stats">
+          <div class="db-stat-pill"><strong id="heroTotalBeds">–</strong><span>Total Beds</span></div>
+          <div class="db-stat-pill"><strong id="heroIcuFree">–</strong><span>ICU Free</span></div>
+          <div class="db-stat-pill"><strong id="heroBlood">–</strong><span>Blood Units</span></div>
+          <div class="db-stat-pill"><strong id="heroOxygen">–</strong><span>Oxygen Cyl</span></div>
+        </div>
+      </div>
+
+      <!-- Hospital info strip -->
+      <div class="hosp-info-card">
+        <div class="hosp-info-left">
+          <div class="hosp-avatar">🏥</div>
+          <div>
+            <div class="hosp-name" id="infoHospName">—</div>
+            <div class="hosp-meta">
+              <span id="infoLocation">📍 —</span>
+              <span>🪪 <span id="infoHospId">—</span></span>
+              <span>🛏️ <span id="infoTotalBeds">–</span> beds</span>
+              <span>🩸 <span id="infoBlood">–</span> blood units</span>
+              <span>🫁 <span id="infoOxygen">–</span> oxygen cyl</span>
+              <span>🕐 Last updated: <span id="infoUpdated">–</span></span>
+            </div>
+          </div>
+        </div>
+        <div class="hosp-status-pill emergency" id="hospStatusPill">
+          <span class="hosp-status-dot"></span>
+          <span id="hospStatusText">–</span>
+        </div>
+      </div>
+
+      <!-- Summary Cards -->
+      <section class="cards" id="topCards"></section>
+
+      <!-- Charts -->
+      <section class="charts">
+        <div class="chart-card">
+          <h3>ICU Occupancy Trend</h3>
+          <canvas id="chartICU"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>Blood Usage Trends</h3>
+          <canvas id="chartBlood"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>Oxygen Demand Analysis</h3>
+          <canvas id="chartOxygen"></canvas>
+        </div>
+        <div class="chart-card" style="height:400px">
+          <h3>Bed Availability Overview</h3>
+          <canvas id="chartBeds" style="max-height:300px"></canvas>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <small>© Government Health — Demo UI • All data is fictional and for demonstration only.</small>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Update Stats Modal -->
+  <div id="statsModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <h3>✏️ Update Hospital Stats</h3>
+      <div class="form-grid">
+        <label>Total Beds<input id="statTotalBeds" type="number" min="0" placeholder="0" /></label>
+        <label>ICU Total<input id="statIcuTotal" type="number" min="0" placeholder="0" /></label>
+        <label>ICU Available<input id="statIcuAvail" type="number" min="0" placeholder="0" /></label>
+        <label>Blood Units<input id="statBloodUnits" type="number" min="0" placeholder="0" /></label>
+        <label>Oxygen Cylinders<input id="statOxygenCyl" type="number" min="0" placeholder="0" /></label>
+        <label>Status
+          <select id="statStatus">
+            <option value="Normal">Normal</option>
+            <option value="Warning">Warning</option>
+            <option value="Critical">Critical</option>
+            <option value="Emergency">Emergency</option>
+          </select>
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" id="statsSaveBtn">Save</button>
+        <button class="btn ghost" onclick="document.getElementById('statsModal').classList.add('hidden')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    const API = 'http://localhost:8000';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      applyRoleUI();
+      updateNotifBadges();
+
+      const user = getUser();
+      const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+
+      function renderHospital(h) {
+        set('heroHospName',  '🏥 ' + h.hospital_name);
+        set('heroHospMeta',  (h.state || '—') + ' • ID: ' + h.hospital_id);
+        set('heroTotalBeds', h.total_beds  || '—');
+        set('heroIcuFree',   h.icu_avail   || '—');
+        set('heroBlood',     h.blood_units || '—');
+        set('heroOxygen',    h.oxygen_cyl  || '—');
+
+        set('infoHospName',  h.hospital_name);
+        set('infoLocation',  '📍 ' + (h.state || '—'));
+        set('infoHospId',    h.hospital_id);
+        set('infoTotalBeds', h.total_beds  || '—');
+        set('infoBlood',     h.blood_units || '—');
+        set('infoOxygen',    h.oxygen_cyl  || '—');
+        set('infoUpdated',   h.updated_at ? new Date(h.updated_at).toLocaleString() : '—');
+        set('hospStatusText', h.status || 'Normal');
+
+        const pill = document.getElementById('hospStatusPill');
+        if (pill) pill.className = 'hosp-status-pill ' + (h.status || 'normal').toLowerCase();
+
+        const icuAvail  = h.icu_avail   || 0;
+        const icuTotal  = h.icu_total   || 0;
+        const totalBeds = h.total_beds  || 0;
+        const bloodUnits= h.blood_units || 0;
+        const oxygenCyl = h.oxygen_cyl  || 0;
+        const status    = h.status      || 'Normal';
+        const icuPct    = icuTotal ? Math.round((icuAvail / icuTotal) * 100) : 0;
+
+        const cardEl = document.getElementById('topCards');
+        if (cardEl) {
+          const cards = [
+            { icon:'🛏️', title:'ICU Available',   value: icuAvail,           sub: `of ${icuTotal} total`, crit: icuAvail < 5 },
+            { icon:'🏥', title:'Total Beds',       value: totalBeds,          sub: 'hospital capacity',    crit: false },
+            { icon:'🩸', title:'Blood Units',      value: bloodUnits,         sub: 'units in stock',       crit: bloodUnits < 50 },
+            { icon:'🫁', title:'Oxygen Cylinders', value: oxygenCyl,          sub: 'cylinders available',  crit: oxygenCyl < 15 },
+            { icon:'📊', title:'ICU Occupancy',    value: (100-icuPct) + '%', sub: 'beds occupied',        crit: (100-icuPct) > 90 },
+            { icon:'🚨', title:'Status',           value: status,             sub: 'current alert level',  crit: ['Critical','Emergency'].includes(status) },
+          ];
+          cardEl.innerHTML = cards.map((c, i) => `
+            <div class="card${c.crit ? ' crit' : ''}" style="animation-delay:${i*70}ms">
+              <div class="card-icon">${c.icon}</div>
+              <h4>${c.title}</h4>
+              <div class="value">${c.value}</div>
+              <div class="delta">${c.sub}</div>
+            </div>`).join('');
+        }
+
+
+        // Period-aware simulated trend charts anchored to real snapshot values
+        function seededRandom(seed) {
+          let s = seed >>> 0;
+          return function() {
+            s = (Math.imul(1664525, s) + 1013904223) >>> 0;
+            return s / 0xffffffff;
+          };
+        }
+
+        function simulateTrend(currentVal, n, variance, seed) {
+          const rand = seededRandom(seed);
+          const points = [];
+          let val = currentVal;
+          for (let i = 0; i < n; i++) {
+            points.unshift(Math.max(0, Math.round(val)));
+            val -= (rand() - 0.5) * 2 * (currentVal * variance);
+          }
+          points[points.length - 1] = currentVal;
+          return points;
+        }
+
+        function getPeriodConfig() {
+          const period = document.getElementById('filterPeriod')?.value || 'week';
+          if (period === 'day')  return { n: 24, labelFn: i => `${i}:00` };
+          if (period === 'week') return { n: 7,  labelFn: i => { const d = new Date(); d.setDate(d.getDate()-(6-i)); return `${d.getMonth()+1}/${d.getDate()}`; } };
+          if (period === 'month')return { n: 30, labelFn: i => { const d = new Date(); d.setDate(d.getDate()-(29-i)); return `${d.getMonth()+1}/${d.getDate()}`; } };
+          if (period === 'year') return { n: 12, labelFn: i => { const d = new Date(); d.setMonth(d.getMonth()-(11-i)); return d.toLocaleString('default',{month:'short'}); } };
+          return { n: 7, labelFn: i => i };
+        }
+
+        const { n, labelFn } = getPeriodConfig();
+        const labels = Array.from({ length: n }, (_, i) => labelFn(i));
+        const pink  = 'rgba(216,27,96,0.88)';
+        const pink2 = 'rgba(232,54,93,0.65)';
+        const blue  = '#3b82f6';
+
+        const icuOccPct  = icuTotal ? Math.round(((icuTotal - icuAvail) / icuTotal) * 100) : 0;
+        const seed = new Date(h.updated_at || Date.now()).getTime();
+        const icuTrend   = simulateTrend(icuOccPct,  n, 0.08, seed);
+        const bloodTrend = simulateTrend(bloodUnits,  n, 0.10, seed + 1);
+        const oxyTrend   = simulateTrend(oxygenCyl,   n, 0.09, seed + 2);
+
+        destroyCharts();
+
+        const c1 = document.getElementById('chartICU')?.getContext('2d');
+        if (c1) _charts.icu = new Chart(c1, {
+          type: 'line',
+          data: { labels, datasets: [{ label: 'ICU Occupancy (%)',
+            data: icuTrend, tension: 0.4, fill: true, pointRadius: n > 15 ? 2 : 4, pointHoverRadius: 6,
+            borderColor: pink,
+            backgroundColor: (function(){ const g = c1.createLinearGradient(0,0,0,220); g.addColorStop(0,'rgba(216,27,96,0.12)'); g.addColorStop(1,'rgba(216,27,96,0)'); return g; })(),
+            borderWidth: 2
+          }]},
+          options: { responsive: true,
+            plugins: { legend:{display:false}, tooltip:{mode:'index',intersect:false} },
+            scales: { x:{grid:{display:false},ticks:{font:{size:11},maxTicksLimit:8}}, y:{min:0,max:100,grid:{color:'#f1f3f5'},ticks:{font:{size:11}},title:{display:true,text:'ICU %',font:{size:11}}} }
+          }
+        });
+
+        const c2 = document.getElementById('chartBlood')?.getContext('2d');
+        if (c2) _charts.blood = new Chart(c2, {
+          type: 'bar',
+          data: { labels, datasets: [{ label: 'Blood Units',
+            data: bloodTrend,
+            backgroundColor: bloodTrend.map((_, i) => i % 2 === 0 ? pink : pink2),
+            borderRadius: 6, borderSkipped: false
+          }]},
+          options: { responsive: true,
+            plugins: { legend:{display:false}, tooltip:{mode:'index',intersect:false} },
+            scales: { x:{grid:{display:false},ticks:{font:{size:11},maxTicksLimit:8}}, y:{min:0,grid:{color:'#f1f3f5'},ticks:{font:{size:11}},title:{display:true,text:'Units',font:{size:11}}} }
+          }
+        });
+
+        const c3 = document.getElementById('chartOxygen')?.getContext('2d');
+        if (c3) _charts.oxygen = new Chart(c3, {
+          type: 'line',
+          data: { labels, datasets: [{ label: 'Oxygen Cylinders',
+            data: oxyTrend, tension: 0.35, borderColor: blue, pointRadius: n > 15 ? 2 : 4,
+            backgroundColor: 'rgba(59,130,246,0.08)', fill: true, borderWidth: 2
+          }]},
+          options: { responsive: true,
+            plugins: { legend:{display:false}, tooltip:{mode:'index',intersect:false} },
+            scales: { x:{grid:{display:false},ticks:{font:{size:11},maxTicksLimit:8}}, y:{min:0,grid:{color:'#f1f3f5'},ticks:{font:{size:11}},title:{display:true,text:'Cylinders',font:{size:11}}} }
+          }
+        });
+
+        if (_charts.beds) { _charts.beds.destroy(); delete _charts.beds; }
+        const c4 = document.getElementById('chartBeds');
+        if (c4) {
+          _charts.beds = new Chart(c4.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+              labels: ['ICU Available', 'ICU Occupied', 'General Beds'],
+              datasets: [{ data: [icuAvail, icuTotal - icuAvail, totalBeds - icuTotal],
+                hoverOffset: 8, backgroundColor: ['#22c55e', '#D81B60', '#3b82f6'] }]
+            },
+            options: { responsive: true, maintainAspectRatio: false,
+              plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } }
+            }
+          });
+        }
+
+        updateSyncTime();
+        _scheduleSyncStale();
+      }
+
+      // Fetch hospital data from real API using hospital_id
+      const hospitalId = user?.hospital_id;
+      if (hospitalId) {
+        fetch(`${API}/api/hospitals/${hospitalId}`)
+          .then(res => res.json())
+          .then(h => renderHospital(h))
+          .catch(() => {
+            showToast('Failed to load hospital data', 'error');
+            // Fallback: show user info from localStorage
+            renderHospital({
+              hospital_id:   user.hospital_id   || '—',
+              hospital_name: user.hospital_name || 'My Hospital',
+              state:         '—', total_beds: 0, icu_total: 0,
+              icu_avail: 0, blood_units: 0, oxygen_cyl: 0, status: 'Normal'
+            });
+          });
+      } else {
+        showToast('No hospital linked to your account', 'error');
+      }
+
+      document.getElementById('filterPeriod')?.addEventListener('change', () => {
+        if (hospitalId) {
+          fetch(`${API}/api/hospitals/${hospitalId}`)
+            .then(res => res.json())
+            .then(h => { destroyCharts(); renderHospital(h); showToast('Charts updated', 'info', 1800); });
+        }
+      });
+
+      // Open modal pre-filled with current stats
+      window.openStatsModal = function() {
+        fetch(`${API}/api/hospitals/${hospitalId}`)
+          .then(res => res.json())
+          .then(h => {
+            document.getElementById('statTotalBeds').value  = h.total_beds  || 0;
+            document.getElementById('statIcuTotal').value   = h.icu_total   || 0;
+            document.getElementById('statIcuAvail').value   = h.icu_avail   || 0;
+            document.getElementById('statBloodUnits').value = h.blood_units || 0;
+            document.getElementById('statOxygenCyl').value  = h.oxygen_cyl  || 0;
+            document.getElementById('statStatus').value     = h.status      || 'Normal';
+            document.getElementById('statsModal').classList.remove('hidden');
+          });
+      };
+
+      // Save stats via PUT /api/hospitals/:id
+      document.getElementById('statsSaveBtn')?.addEventListener('click', () => {
+        const body = {
+          total_beds:  Number(document.getElementById('statTotalBeds').value  || 0),
+          icu_total:   Number(document.getElementById('statIcuTotal').value   || 0),
+          icu_avail:   Number(document.getElementById('statIcuAvail').value   || 0),
+          blood_units: Number(document.getElementById('statBloodUnits').value || 0),
+          oxygen_cyl:  Number(document.getElementById('statOxygenCyl').value  || 0),
+          status:      document.getElementById('statStatus').value
+        };
+        fetch(`${API}/api/hospitals/${hospitalId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        })
+          .then(res => res.json())
+          .then(() => {
+            showToast('Hospital stats updated', 'success');
+            document.getElementById('statsModal').classList.add('hidden');
+            fetch(`${API}/api/hospitals/${hospitalId}`)
+              .then(res => res.json())
+              .then(h => { destroyCharts(); renderHospital(h); });
+          })
+          .catch(() => showToast('Failed to update stats', 'error'));
+      });
+    });
+  </script>
+
+</body>
+</html>

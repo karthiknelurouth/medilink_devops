@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Register — MediLink</title>
+  <link rel="stylesheet" href="style.css" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { background-color: #fff8fa; }
+
+    body {
+      min-height: 100vh;
+      background-color: #fff8fa;
+      display: flex; flex-direction: column; align-items: center;
+      font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+      position: relative; overflow-x: hidden; padding: 25px 16px;
+    }
+
+    body::before {
+      content: ''; position: fixed; inset: 0;
+      background-image: url('bg-pattern-1.png');
+      background-repeat: repeat; background-size: 520px 520px;
+      opacity: 0.16; animation: bgScroll 30s linear infinite; z-index: 0;
+    }
+    @keyframes bgScroll {
+      from { background-position: 0 0; }
+      to   { background-position: 520px 520px; }
+    }
+
+    .page-wrap {
+      position: relative; z-index: 1;
+      display: flex; flex-direction: column; align-items: center; width: 100%;
+    }
+
+    .logo-wrap {
+      margin-bottom: 14px; animation: fadeDown 0.5s ease both;
+      background: rgba(255,255,255,0.92); border-radius: 20px; padding: 18px 32px;
+      box-shadow: 0 0 40px rgba(216,27,96,0.18), 0 2px 16px rgba(0,0,0,0.07);
+      border: 1px solid rgba(216,27,96,0.12);
+    }
+    .logo-wrap img { width: 210px; display: block; }
+
+    .tagline {
+      font-size: 26px; font-weight: 800; color: #111827;
+      margin-bottom: 26px; text-align: center;
+      animation: fadeDown 0.55s ease both;
+      text-shadow: 0 1px 8px rgba(255,255,255,0.9);
+      background: rgba(255,255,255,0.7); padding: 6px 20px; border-radius: 999px;
+    }
+
+    .auth-card {
+      position: relative;
+      background: linear-gradient(130deg, rgba(26,10,16,0.88) 0%, rgba(45,15,28,0.88) 55%, rgba(58,16,32,0.88) 100%);
+      backdrop-filter: blur(12px); border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(216,27,96,0.18), 0 2px 12px rgba(0,0,0,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 52px 58px 46px; width: 100%; max-width: 680px;
+      animation: fadeUp 0.5s ease both; overflow: hidden;
+    }
+    .auth-card::before {
+      content: ''; position: absolute; top: -40px; right: -40px;
+      width: 220px; height: 220px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(216,27,96,0.22) 0%, transparent 70%);
+    }
+    .auth-card::after {
+      content: ''; position: absolute; bottom: -50px; left: 30%;
+      width: 200px; height: 200px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(232,54,93,0.12) 0%, transparent 70%);
+    }
+
+    .staff-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 10px; padding: 12px 16px; margin-bottom: 22px;
+      color: rgba(255,255,255,0.75); font-size: 13.5px; font-weight: 600;
+      position: relative; z-index: 1; width: 100%;
+    }
+    .staff-badge .badge-icon { font-size: 20px; }
+    .staff-badge .badge-note { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+
+    .section-label {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.8px; color: #ff8ab3; margin: 20px 0 14px;
+      position: relative; z-index: 1;
+    }
+
+    .auth-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+    .auth-field {
+      display: flex; flex-direction: column; gap: 7px;
+      margin-bottom: 16px; position: relative; z-index: 1;
+    }
+    .auth-field label { font-size: 15px; font-weight: 600; color: rgba(255,255,255,0.75); }
+    .input-wrap { position: relative; }
+    .input-icon {
+      position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+      font-size: 15px; color: rgba(255,255,255,0.5);
+    }
+    .auth-field input,
+    .auth-field select {
+      width: 100%; padding: 15px 16px 15px 44px;
+      border-radius: 10px; border: 1.5px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.08); color: #fff;
+      font-size: 15.5px; outline: none; font-family: inherit;
+    }
+    .auth-field select { padding-left: 14px; }
+    .auth-field select option { background: #2d0f1c; color: #fff; }
+    .auth-field input::placeholder { color: rgba(255,255,255,0.45); }
+    .auth-field input:focus,
+    .auth-field select:focus {
+      border-color: #D81B60;
+      box-shadow: 0 0 0 3px rgba(216,27,96,0.2);
+      background: rgba(255,255,255,0.12);
+    }
+
+    .error-msg {
+      color: #ff8ab3; font-size: 13px; font-weight: 600;
+      margin-bottom: 14px; text-align: center;
+      position: relative; z-index: 1; min-height: 18px;
+    }
+
+    .auth-submit {
+      width: 100%; padding: 16px;
+      background: linear-gradient(90deg, #D81B60, #E8365D);
+      color: #fff; border: none; border-radius: 999px;
+      font-size: 17px; font-weight: 700; cursor: pointer;
+      margin-top: 4px; box-shadow: 0 4px 18px rgba(216,27,96,0.4);
+      transition: all 0.2s; position: relative; z-index: 1;
+    }
+    .auth-submit:hover { transform: translateY(-1px); box-shadow: 0 8px 28px rgba(216,27,96,0.45); }
+    .auth-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    .auth-footer-text {
+      text-align: center; margin-top: 18px;
+      font-size: 14.5px; color: rgba(255,255,255,0.65);
+      position: relative; z-index: 1;
+    }
+    .auth-footer-text a { color: #ff8ab3; font-weight: 600; text-decoration: underline; }
+
+    @keyframes fadeDown { from { opacity:0; transform:translateY(-14px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes fadeUp   { from { opacity:0; transform:translateY(14px);  } to { opacity:1; transform:translateY(0); } }
+
+    @media (max-width: 540px) {
+      .auth-row { grid-template-columns: 1fr; }
+      .auth-card { padding: 28px 20px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page-wrap">
+
+    <div class="logo-wrap">
+      <img src="medilink-logo.png" alt="MediLink" />
+    </div>
+
+    <h1 class="tagline">Register your hospital</h1>
+
+    <div class="auth-card">
+
+      <!-- Staff only badge -->
+      <div class="staff-badge">
+        <span class="badge-icon">👤</span>
+        <div>
+          <div>Staff Account Registration</div>
+          <div class="badge-note">All new accounts are Staff level. Contact admin for elevated access.</div>
+        </div>
+      </div>
+
+      <div class="section-label">Hospital Details</div>
+
+      <div class="auth-field">
+        <label>Hospital Name</label>
+        <div class="input-wrap">
+          <span class="input-icon">🏥</span>
+          <input type="text" id="regHospName" placeholder="e.g. Capital Gate Hospital" />
+        </div>
+      </div>
+
+      <div class="auth-row">
+        <div class="auth-field">
+          <label>Hospital ID</label>
+          <div class="input-wrap">
+            <span class="input-icon">🪪</span>
+            <input type="text" id="regHospId" placeholder="e.g. DL-CGH-005" />
+          </div>
+        </div>
+
+        <div class="auth-field">
+          <label>State</label>
+          <select id="regState">
+            <option value="">Select state</option>
+            <option>Andhra Pradesh</option>
+            <option>Delhi</option>
+            <option>Karnataka</option>
+            <option>Maharashtra</option>
+            <option>Tamil Nadu</option>
+            <option>Telangana</option>
+            <option>West Bengal</option>
+            <option>Other</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="auth-field">
+        <label>Address</label>
+        <div class="input-wrap">
+          <span class="input-icon">📍</span>
+          <input type="text" id="regAddress" placeholder="Full hospital address" />
+        </div>
+      </div>
+
+      <div class="section-label">Staff Details</div>
+
+      <div class="auth-row">
+        <div class="auth-field">
+          <label>Full Name</label>
+          <div class="input-wrap">
+            <span class="input-icon">👤</span>
+            <input type="text" id="regOwner" placeholder="Dr. Full Name" />
+          </div>
+        </div>
+
+        <div class="auth-field">
+          <label>Phone Number</label>
+          <div class="input-wrap">
+            <span class="input-icon">📞</span>
+            <input type="tel" id="regPhone" placeholder="+91 XXXXX XXXXX" />
+          </div>
+        </div>
+      </div>
+
+      <div class="auth-field">
+        <label>Official Email</label>
+        <div class="input-wrap">
+          <span class="input-icon">✉️</span>
+          <input type="email" id="regEmail" placeholder="staff@hospital.gov.in" />
+        </div>
+      </div>
+
+      <div class="auth-row">
+        <div class="auth-field">
+          <label>Password</label>
+          <div class="input-wrap">
+            <span class="input-icon">🔒</span>
+            <input type="password" id="regPass" placeholder="Create password" />
+          </div>
+        </div>
+
+        <div class="auth-field">
+          <label>Confirm Password</label>
+          <div class="input-wrap">
+            <span class="input-icon">🔒</span>
+            <input type="password" id="regPass2" placeholder="Repeat password" />
+          </div>
+        </div>
+      </div>
+
+      <div class="error-msg" id="regError"></div>
+
+      <button class="auth-submit" id="regBtn" onclick="handleRegister()">Create Account →</button>
+
+      <div class="auth-footer-text">
+        Already have an account? <a href="login.html">Sign in</a>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    const API = 'http://localhost:8000';
+
+    async function handleRegister() {
+      const name   = document.getElementById('regHospName').value.trim();
+      const hospId = document.getElementById('regHospId').value.trim();
+      const email  = document.getElementById('regEmail').value.trim();
+      const owner  = document.getElementById('regOwner').value.trim();
+      const pass   = document.getElementById('regPass').value.trim();
+      const pass2  = document.getElementById('regPass2').value.trim();
+      const errEl  = document.getElementById('regError');
+      const btn    = document.getElementById('regBtn');
+
+      errEl.textContent = '';
+
+      if (!name || !hospId || !email || !owner || !pass) {
+        errEl.textContent = 'Please fill in all required fields.'; return;
+      }
+      if (pass !== pass2) {
+        errEl.textContent = 'Passwords do not match.'; return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Creating account…';
+
+      try {
+        const res  = await fetch(`${API}/api/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: owner,
+            email,
+            password: pass,
+            role: 'user',
+            hospital_name: name,
+            hospital_id: hospId
+          })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          errEl.textContent = data.error || 'Registration failed.';
+          btn.disabled = false;
+          btn.textContent = 'Create Account →';
+          return;
+        }
+
+        window.location.href = 'login.html';
+
+      } catch (err) {
+        errEl.textContent = 'Server error. Is the backend running?';
+        btn.disabled = false;
+        btn.textContent = 'Create Account →';
+      }
+    }
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Shortage Prediction — MediLink</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .sp-hero {
+      background: linear-gradient(130deg, #0a1020 0%, #0f1c2d 55%, #102030 100%);
+      border-radius: var(--radius); padding: 28px 32px;
+      display: flex; align-items: center; justify-content: space-between; gap: 20px;
+      position: relative; overflow: hidden; margin-bottom: 22px;
+      box-shadow: 0 8px 32px rgba(59,130,246,0.18);
+    }
+    .sp-hero::before { content:''; position:absolute; top:-60px; right:-40px; width:280px; height:280px; border-radius:50%; background:radial-gradient(circle,rgba(59,130,246,0.22) 0%,transparent 70%); pointer-events:none; }
+    .sp-hero::after  { content:''; position:absolute; bottom:-50px; left:25%; width:220px; height:220px; border-radius:50%; background:radial-gradient(circle,rgba(99,102,241,0.12) 0%,transparent 70%); pointer-events:none; }
+    .sp-hero-text { z-index:1; }
+    .sp-hero-text h1 { font-size:22px; font-weight:700; color:#fff; margin:0 0 6px; letter-spacing:-0.3px; }
+    .sp-hero-text p  { font-size:13.5px; color:rgba(255,255,255,0.55); margin:0; max-width:440px; line-height:1.6; }
+    .sp-hero-stats { display:flex; gap:16px; z-index:1; flex-shrink:0; }
+    .sp-stat-pill { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:14px 18px; text-align:center; min-width:90px; }
+    .sp-stat-pill strong { display:block; font-size:22px; font-weight:700; color:#fff; }
+    .sp-stat-pill span   { font-size:10px; color:rgba(255,255,255,0.45); text-transform:uppercase; letter-spacing:0.7px; }
+    .sp-live-badge { display:flex; align-items:center; gap:6px; background:rgba(59,130,246,0.15); border:1px solid rgba(59,130,246,0.3); color:#1d4ed8; padding:5px 12px; border-radius:999px; font-size:12px; font-weight:600; }
+    .sp-live-dot { width:7px; height:7px; border-radius:50%; background:#3b82f6; animation:pulseBadge 1.6s ease infinite; }
+
+    .sp-filters { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:20px; }
+    .sp-filter-label { font-size:13px; font-weight:600; color:var(--muted); }
+    .sp-filter-btn { padding:7px 14px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--card); font-size:13px; font-weight:500; color:var(--muted); cursor:pointer; transition:all var(--transition); font-family:inherit; }
+    .sp-filter-btn:hover { border-color:#3b82f6; color:#3b82f6; }
+    .sp-filter-btn.active { background:#3b82f6; border-color:#3b82f6; color:#fff; box-shadow:0 4px 14px rgba(59,130,246,0.3); }
+    .sp-filter-select { padding:7px 12px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--card); font-size:13px; color:var(--text); cursor:pointer; outline:none; font-family:inherit; }
+    .sp-filter-select:focus { border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,0.15); }
+
+    .sp-metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:20px; }
+    .sp-metric-card { background:var(--card); border-radius:var(--radius); border:1px solid var(--border); padding:18px 20px; box-shadow:var(--shadow); animation:cardIn 0.4s ease both; transition:transform var(--transition),box-shadow var(--transition); }
+    .sp-metric-card:hover { transform:translateY(-2px); box-shadow:var(--shadow-lg); }
+    .sp-metric-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; }
+    .sp-metric-icon { width:40px; height:40px; border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; font-size:18px; }
+    .sp-metric-num   { font-size:28px; font-weight:700; color:var(--text); font-family:'DM Mono',monospace; margin-bottom:4px; }
+    .sp-metric-label { font-size:13px; color:var(--muted); font-weight:500; }
+
+    .sp-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px; }
+    .sp-card { background:var(--card); border-radius:var(--radius); border:1px solid var(--border); padding:22px; box-shadow:var(--shadow); }
+    .sp-card-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+    .sp-card-title  { font-size:14px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:8px; }
+    .sp-card-badge  { font-size:11px; font-weight:600; padding:3px 10px; border-radius:999px; }
+    .sp-badge-blue  { background:rgba(59,130,246,0.12); color:#2563eb; }
+    .sp-badge-red   { background:rgba(239,68,68,0.12);  color:#dc2626; }
+    .sp-badge-green { background:rgba(34,197,94,0.12);  color:#16a34a; }
+
+    /* Shortage risk list */
+    .sp-shortage-list { display:flex; flex-direction:column; gap:14px; }
+    .sp-shortage-item { padding:14px 16px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--bg); animation:cardIn 0.4s ease both; transition:all var(--transition); }
+    .sp-shortage-item:hover { border-color:#3b82f6; transform:translateX(3px); }
+    .sp-shortage-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+    .sp-shortage-name { font-size:13.5px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:8px; }
+    .sp-shortage-badge { font-size:11px; font-weight:700; padding:3px 10px; border-radius:999px; }
+    .sp-shortage-badge.critical { background:rgba(239,68,68,0.12); color:#dc2626; border:1px solid rgba(239,68,68,0.2); }
+    .sp-shortage-badge.warning  { background:rgba(245,158,11,0.12); color:#b45309; border:1px solid rgba(245,158,11,0.2); }
+    .sp-shortage-badge.ok       { background:rgba(34,197,94,0.12);  color:#16a34a; border:1px solid rgba(34,197,94,0.2); }
+    .sp-shortage-meta { font-size:12px; color:var(--muted); margin-bottom:8px; }
+    .sp-bar-bg { height:8px; background:var(--border); border-radius:999px; overflow:hidden; }
+    .sp-bar    { height:100%; border-radius:999px; width:0; transition:width 1s cubic-bezier(0.4,0,0.2,1); }
+    .sp-bar-labels { display:flex; justify-content:space-between; margin-top:4px; font-size:11px; color:var(--muted); }
+
+    /* Reorder recommendations */
+    .sp-reorder-list { display:flex; flex-direction:column; gap:12px; }
+    .sp-reorder-item { display:flex; align-items:center; gap:12px; padding:13px 15px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--bg); animation:cardIn 0.4s ease both; }
+    .sp-reorder-icon { width:40px; height:40px; border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+    .sp-reorder-info { flex:1; }
+    .sp-reorder-name { font-size:13px; font-weight:700; color:var(--text); margin-bottom:2px; }
+    .sp-reorder-sub  { font-size:12px; color:var(--muted); }
+    .sp-reorder-qty  { text-align:right; }
+    .sp-reorder-num  { font-size:18px; font-weight:700; font-family:'DM Mono',monospace; color:#3b82f6; }
+    .sp-reorder-lbl  { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; }
+
+    @media (max-width:1100px) { .sp-grid-2 { grid-template-columns:1fr; } .sp-hero-stats { display:none; } }
+    @media (max-width:900px)  { .sp-metrics { grid-template-columns:1fr 1fr; } }
+    @media (max-width:640px)  { .sp-metrics { grid-template-columns:1fr; } .sp-hero { padding:20px; } }
+  </style>
+  <script>
+    (function() {
+      try {
+        const user = JSON.parse(localStorage.getItem('medilink_user'));
+        if (user && user.role === 'admin') {
+          const style = document.createElement('style');
+          style.textContent = '.my-hospital-pill { display: none !important; }';
+          document.head.appendChild(style);
+        }
+      } catch(e) {}
+    })();
+  </script>
+</head>
+<body>
+<div id="app">
+
+  <aside class="sidebar" id="sidebar">
+    <div class="brand"><img src="medilink-logo.png" class="brand-logo" alt="MediLink" /></div>
+    <nav class="nav">
+      <a class="nav-link" href="dashboard.html"><span class="nav-icon">📊</span><span class="nav-label">Dashboard</span></a>
+      <a class="nav-link" href="inventory.html"><span class="nav-icon">📦</span><span class="nav-label">Inventory</span></a>
+      <a class="nav-link" href="transfers.html"><span class="nav-icon">🔄</span><span class="nav-label">Patient Transfers</span></a>
+      <a class="nav-link" href="disease-prediction.html"><span class="nav-icon">🔬</span><span class="nav-label">Disease Prediction</span></a>
+      <a class="nav-link active" href="shortage-prediction.html"><span class="nav-icon">💊</span><span class="nav-label">Shortage Prediction</span></a>
+      <a class="nav-link" href="faqs.html"><span class="nav-icon">❓</span><span class="nav-label">FAQs</span></a>
+    </nav>
+    <div class="sidebar-help"><a href="faqs.html" class="help-link"><span class="help-icon">?</span><span class="help-label">Help &amp; Support</span></a></div>
+    <div class="sidebar-sync" id="sidebarSync">
+      <div class="sync-dot" id="syncDot"></div>
+      <div class="sync-text"><div class="sync-label">Last synced</div><div class="sync-time" id="syncTime">--:--</div></div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="header">
+      <div class="header-left">
+        <h2>Medicine Shortage Prediction</h2>
+        <a href="my-hospital.html" class="my-hospital-pill" title="View my hospital dashboard">
+          <span class="pill-icon">🏥</span>
+          <span class="pill-name"><span class="pill-label">My Hospital</span><span class="pill-hosp" id="pillHospName">My Hospital</span></span>
+        </a>
+      </div>
+      <div class="header-right">
+        <div class="sp-live-badge"><span class="sp-live-dot"></span> Predictive Engine</div>
+        <select id="hospitalSelect" class="sp-filter-select" style="margin-left:10px; display:none;">
+          <option value="all">All Hospitals</option>
+        </select>
+        <div class="notif-wrapper">
+          <button id="notifBtn" class="icon-btn" aria-label="Notifications">🔔</button>
+          <span id="notifBadge" class="badge">0</span>
+          <div class="notif-panel" id="notifPanel">
+            <div class="notif-panel-header">Notifications <span id="notifPanelCount"></span></div>
+            <div class="notif-list" id="notifList"></div>
+            <div class="notif-panel-footer"><a onclick="window.location.href='transfers.html'">View all transfers &rarr;</a></div>
+          </div>
+        </div>
+        <div class="profile-wrapper">
+          <button class="profile-btn" id="profileBtn" aria-label="Hospital profile"><span class="profile-avatar-icon">🏥</span></button>
+          <div class="profile-panel" id="profilePanel">
+            <div class="profile-panel-top">
+              <div class="profile-panel-avatar" id="profileAvatar">🏥</div>
+              <div><div class="profile-panel-name" id="profileName">—</div><div class="profile-panel-role" id="profileRole">—</div></div>
+            </div>
+            <div class="profile-panel-body">
+              <div class="pd-row"><span class="pd-label">Hospital ID</span><span class="pd-value" id="pdHospitalId">—</span></div>
+              <div class="pd-row"><span class="pd-label">Hospital</span><span class="pd-value" id="pdHospitalName">—</span></div>
+              <div class="pd-row"><span class="pd-label">Name</span><span class="pd-value" id="pdName">—</span></div>
+              <div class="pd-row"><span class="pd-label">Email</span><span class="pd-value" id="pdEmail">—</span></div>
+              <div class="pd-row"><span class="pd-label">Role</span><span class="pd-value" id="pdRole">—</span></div>
+              <div class="pd-row"><span class="pd-label">Permissions</span><span class="pd-value" id="pdPermissions">—</span></div>
+            </div>
+            <div class="profile-panel-footer">
+              <button class="profile-logout-btn" onclick="localStorage.removeItem('medilink_user');window.location.href='login.html'">⏻ Logout</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- HERO -->
+    <div class="sp-hero">
+      <div class="sp-hero-text">
+        <h1>💊 Medicine Shortage Prediction</h1>
+        <p>Forecast medicine stock depletion based on consumption rates, reorder levels and historical usage patterns across your facility.</p>
+      </div>
+      <div class="sp-hero-stats">
+        <div class="sp-stat-pill"><strong id="heroCritical">–</strong><span>Critical</span></div>
+        <div class="sp-stat-pill"><strong id="heroWarning">–</strong><span>Warning</span></div>
+        <div class="sp-stat-pill"><strong id="heroReorders">–</strong><span>Reorders</span></div>
+      </div>
+    </div>
+
+    <!-- METRICS -->
+    <div class="sp-metrics">
+      <div class="sp-metric-card" style="animation-delay:0s">
+        <div class="sp-metric-top"><div class="sp-metric-icon" style="background:rgba(239,68,68,0.1)">🚨</div></div>
+        <div class="sp-metric-num" id="metricCritical">–</div>
+        <div class="sp-metric-label">Critical Shortage Risk</div>
+      </div>
+      <div class="sp-metric-card" style="animation-delay:0.07s">
+        <div class="sp-metric-top"><div class="sp-metric-icon" style="background:rgba(245,158,11,0.1)">⚠️</div></div>
+        <div class="sp-metric-num" id="metricWarning">–</div>
+        <div class="sp-metric-label">Low Stock Warning</div>
+      </div>
+      <div class="sp-metric-card" style="animation-delay:0.14s">
+        <div class="sp-metric-top"><div class="sp-metric-icon" style="background:rgba(59,130,246,0.1)">📦</div></div>
+        <div class="sp-metric-num" id="metricDaysLeft">–</div>
+        <div class="sp-metric-label">Avg Days of Stock Left</div>
+      </div>
+      <div class="sp-metric-card" style="animation-delay:0.21s">
+        <div class="sp-metric-top"><div class="sp-metric-icon" style="background:rgba(34,197,94,0.1)">✅</div></div>
+        <div class="sp-metric-num" id="metricOk">–</div>
+        <div class="sp-metric-label">Adequately Stocked</div>
+      </div>
+    </div>
+
+    <!-- FILTERS -->
+    <div class="sp-filters">
+      <span class="sp-filter-label">Forecast Window:</span>
+      <button class="sp-filter-btn active" onclick="setWindow(7,this)">7 Days</button>
+      <button class="sp-filter-btn" onclick="setWindow(14,this)">14 Days</button>
+      <button class="sp-filter-btn" onclick="setWindow(30,this)">30 Days</button>
+      <span id="windowLabel" style="font-size:12px;color:#3b82f6;font-weight:600">Forecasting: Next 7 Days</span>
+    </div>
+
+    <!-- SHORTAGE RISK + REORDER RECOMMENDATIONS -->
+    <div class="sp-grid-2">
+      <div class="sp-card">
+        <div class="sp-card-header">
+          <div class="sp-card-title">🔴 Shortage Risk by Medicine</div>
+          <span class="sp-card-badge sp-badge-red" id="shortageCount">–</span>
+        </div>
+        <div class="sp-shortage-list" id="shortageList"></div>
+      </div>
+      <div class="sp-card">
+        <div class="sp-card-header">
+          <div class="sp-card-title">🛒 Reorder Recommendations</div>
+          <span class="sp-card-badge sp-badge-blue" id="reorderBadge">–</span>
+        </div>
+        <div class="sp-reorder-list" id="reorderList"></div>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <small>© Government Health — Demo UI • Shortage predictions are based on real-time inventory data and consumption patterns.</small>
+    </footer>
+  </div>
+</div>
+
+<script src="script.js"></script>
+<script>
+let MEDICINES = [];
+
+async function loadInventoryForShortage() {
+  const heroHospitalBadge = document.getElementById('heroHospitalBadge');
+  const heroHospitalName  = document.getElementById('heroHospitalName');
+  const shortageList = document.getElementById('shortageList');
+  const reorderList  = document.getElementById('reorderList');
+  const spinner      = document.getElementById('hospitalLoadingSpinner');
+
+  if (spinner)      spinner.style.display = 'inline-block';
+  if (shortageList) shortageList.innerHTML = '<div style="text-align:center;padding:24px;color:var(--muted)">Loading data…</div>';
+  if (reorderList)  reorderList.innerHTML  = '';
+
+  try {
+    const user    = JSON.parse(localStorage.getItem('medilink_user'));
+    const isAdmin = user && user.role === 'admin';
+    const select  = document.getElementById('hospitalSelect');
+    const selectedValue = select?.value;
+
+    let url;
+
+    if (isAdmin) {
+      if (!selectedValue || selectedValue === 'all') {
+        url = `${API_BASE}/api/inventory`;
+        if (heroHospitalBadge) heroHospitalBadge.style.display = 'none';
+      } else {
+        // inventory table stores hospital as a NAME string — send name not ID
+        const selectedOption = select.options[select.selectedIndex];
+        const hospitalName   = selectedOption?.dataset.name || selectedOption?.textContent;
+        url = `${API_BASE}/api/inventory?hospital=${encodeURIComponent(hospitalName)}`;
+        console.log('[Shortage] Fetching inventory for hospital name:', JSON.stringify(hospitalName));
+        if (heroHospitalBadge) heroHospitalBadge.style.display = 'flex';
+        if (heroHospitalName)  heroHospitalName.textContent = hospitalName;
+      }
+    } else {
+      url = `${API_BASE}/api/inventory?hospital=${encodeURIComponent(user.hospital_name)}`;
+      if (heroHospitalBadge) heroHospitalBadge.style.display = 'none';
+    }
+
+    const res  = await fetch(url);
+    const data = await res.json();
+
+    MEDICINES = data.map(m => ({
+      name:      m.item_name,
+      category:  m.category || 'General',
+      stock:     m.quantity,
+      dailyUse:  m.daily_use || 1,
+      reorderAt: m.reorder_level || 10,
+      icon:      '💊',
+      color:     '#3b82f6'
+    }));
+
+    refresh();
+  } catch (err) {
+    console.error('Error loading inventory:', err);
+    if (shortageList) shortageList.innerHTML = '<div style="text-align:center;padding:24px;color:#dc2626">Failed to load inventory data.</div>';
+  } finally {
+    if (spinner) spinner.style.display = 'none';
+  }
+}
+
+let currentWindow = 7;
+
+function getDaysLeft(med) {
+  return Math.floor(med.stock / med.dailyUse);
+}
+
+function getRiskLevel(med, window) {
+  const days = getDaysLeft(med);
+  if (days <= window * 0.5)  return 'critical';
+  if (days <= window * 1.2)  return 'warning';
+  return 'ok';
+}
+
+function getFilteredMeds() {
+  return MEDICINES;
+}
+
+
+function buildShortageList(window) {
+  const meds = getFilteredMeds();
+  const el = document.getElementById('shortageList');
+  const sorted = [...meds].sort((a, b) => getDaysLeft(a) - getDaysLeft(b));
+  el.innerHTML = sorted.map((m, i) => {
+    const days = getDaysLeft(m);
+    const risk  = getRiskLevel(m, window);
+    const pct   = Math.min(100, Math.round((m.stock / (m.dailyUse * window * 2)) * 100));
+    const barColor = risk === 'critical' ? '#dc2626' : risk === 'warning' ? '#f59e0b' : '#22c55e';
+    const riskLabel = risk === 'critical' ? 'Critical' : risk === 'warning' ? 'Warning' : 'OK';
+    return `
+      <div class="sp-shortage-item" style="animation-delay:${i*0.06}s">
+        <div class="sp-shortage-top">
+          <div class="sp-shortage-name">${m.icon} ${m.name}</div>
+          <span class="sp-shortage-badge ${risk}">${riskLabel}</span>
+        </div>
+        <div class="sp-shortage-meta">${m.stock} units remaining · ${m.dailyUse} units/day · Reorder at ${m.reorderAt}</div>
+        <div class="sp-bar-bg"><div class="sp-bar" data-w="${pct}" style="background:${barColor}"></div></div>
+        <div class="sp-bar-labels"><span>${days} days left</span><span>Medicine</span></div>
+      </div>`;
+  }).join('');
+  setTimeout(() => document.querySelectorAll('.sp-bar').forEach(b => b.style.width = b.dataset.w + '%'), 80);
+  const critical = meds.filter(m => getRiskLevel(m, window) === 'critical').length;
+  const warning  = meds.filter(m => getRiskLevel(m, window) === 'warning').length;
+  document.getElementById('shortageCount').textContent = `${critical} Critical, ${warning} Warning`;
+}
+
+function buildReorderList(window) {
+  const meds = getFilteredMeds().filter(m => getDaysLeft(m) <= window * 1.5 || m.stock <= m.reorderAt * 1.5);
+  const el = document.getElementById('reorderList');
+  el.innerHTML = meds.map((m, i) => {
+    const days = getDaysLeft(m);
+    const needed = Math.max(0, (m.dailyUse * 30) - m.stock + m.reorderAt);
+    return `
+      <div class="sp-reorder-item" style="animation-delay:${i*0.07}s">
+        <div class="sp-reorder-icon" style="background:${m.color}18">${m.icon}</div>
+        <div class="sp-reorder-info">
+          <div class="sp-reorder-name">${m.name}</div>
+          <div class="sp-reorder-sub">${days} days left · Order within ${Math.max(1, days - 3)} days</div>
+        </div>
+        <div class="sp-reorder-qty">
+          <div class="sp-reorder-num">${needed}</div>
+          <div class="sp-reorder-lbl">units needed</div>
+        </div>
+      </div>`;
+  }).join('') || '<div style="text-align:center;padding:20px;color:var(--muted)">✅ No immediate reorders needed</div>';
+  document.getElementById('reorderBadge').textContent = meds.length + ' items';
+}
+
+
+function updateMetrics(window) {
+  const meds = getFilteredMeds();
+  const critical = meds.filter(m => getRiskLevel(m, window) === 'critical').length;
+  const warning  = meds.filter(m => getRiskLevel(m, window) === 'warning').length;
+  const ok       = meds.filter(m => getRiskLevel(m, window) === 'ok').length;
+  const avgDays  = Math.round(meds.reduce((s, m) => s + getDaysLeft(m), 0) / meds.length);
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  set('metricCritical', critical);
+  set('metricWarning',  warning);
+  set('metricDaysLeft', avgDays + 'd');
+  set('metricOk',       ok);
+  set('heroCritical',   critical);
+  set('heroWarning',    warning);
+  set('heroReorders',   meds.filter(m => getDaysLeft(m) <= window * 1.5 || m.stock <= m.reorderAt * 1.5).length);
+}
+
+function setWindow(w, btn) {
+  currentWindow = w;
+  document.querySelectorAll('.sp-filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('windowLabel').textContent = `Forecasting: Next ${w} Days`;
+  refresh();
+}
+
+function refresh() {
+  updateMetrics(currentWindow);
+  buildShortageList(currentWindow);
+  buildReorderList(currentWindow);
+}
+
+async function loadHospitals() {
+  try {
+    const user = JSON.parse(localStorage.getItem('medilink_user'));
+    if (!user || user.role !== 'admin') return;
+
+    const res = await fetch(`${API_BASE}/api/hospitals`);
+    const hospitals = await res.json();
+
+    const select = document.getElementById('hospitalSelect');
+
+    // ✅ FULL RESET (important)
+    select.innerHTML = '';
+    
+    // ✅ Add default option
+    const defaultOpt = document.createElement('option');
+    defaultOpt.value = 'all';
+    defaultOpt.textContent = 'All Hospitals';
+    select.appendChild(defaultOpt);
+
+    // ✅ Add hospitals
+    hospitals.forEach(h => {
+      const opt = document.createElement('option');
+      opt.value = h.hospital_id;
+      opt.dataset.name = h.hospital_name;  // store name for inventory query
+      opt.textContent = h.hospital_name;
+      select.appendChild(opt);
+    });
+
+    select.style.display = 'inline-block';
+
+    // ✅ Prevent multiple listeners
+    select.onchange = loadInventoryForShortage;
+
+  } catch (err) {
+    console.error("Error loading hospitals:", err);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  applyRoleUI();
+  updateNotifBadges();
+  loadHospitals();              // 👈 add this
+  loadInventoryForShortage();
+});
+</script>
+</body>
+</html>

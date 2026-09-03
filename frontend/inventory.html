@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Inventory — Hospital Resource</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .inv-hero {
+      background: linear-gradient(130deg, #1a0a10 0%, #2d0f1c 55%, #3a1020 100%);
+      border-radius: var(--radius); padding: 24px 28px;
+      display: flex; align-items: center; justify-content: space-between; gap: 20px;
+      position: relative; overflow: hidden; margin-bottom: 22px;
+      box-shadow: 0 8px 32px rgba(216,27,96,0.18);
+    }
+    .inv-hero::before {
+      content: ''; position: absolute; top: -40px; right: -40px;
+      width: 220px; height: 220px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(216,27,96,0.22) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .inv-hero::after {
+      content: ''; position: absolute; bottom: -50px; left: 30%;
+      width: 200px; height: 200px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(232,54,93,0.1) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .inv-hero-text { z-index: 1; }
+    .inv-hero-text h1 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 5px; letter-spacing: -0.3px; }
+    .inv-hero-text p  { font-size: 13px; color: rgba(255,255,255,0.55); margin: 0; line-height: 1.6; max-width: 480px; }
+    .inv-hero-stats { display: flex; gap: 14px; flex-shrink: 0; z-index: 1; }
+    .inv-stat-pill {
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px; padding: 12px 18px; text-align: center; min-width: 85px;
+    }
+    .inv-stat-pill strong { display: block; font-size: 22px; font-weight: 700; color: #fff; font-family: 'DM Mono', monospace; }
+    .inv-stat-pill span   { font-size: 10px; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 0.7px; }
+    @media (max-width: 900px) { .inv-hero-stats { display: none; } }
+    @media (max-width: 640px) { .inv-hero { padding: 20px; } .inv-hero-text h1 { font-size: 17px; } }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand"><img src="medilink-logo.png" class="brand-logo" alt="MediLink" /></div>
+      <nav class="nav">
+        <a class="nav-link" href="dashboard.html"><span class="nav-icon">📊</span><span class="nav-label">Dashboard</span></a>
+        <a class="nav-link active" href="inventory.html"><span class="nav-icon">📦</span><span class="nav-label">Inventory</span></a>
+        <a class="nav-link" href="transfers.html"><span class="nav-icon">🔄</span><span class="nav-label">Patient Transfers</span></a>
+        <a class="nav-link" href="disease-prediction.html"><span class="nav-icon">🔬</span><span class="nav-label">Disease Prediction</span></a>
+        <a class="nav-link" href="shortage-prediction.html"><span class="nav-icon">💊</span><span class="nav-label">Shortage Prediction</span></a>
+        <a class="nav-link" href="faqs.html"><span class="nav-icon">❓</span><span class="nav-label">FAQs</span></a>
+      </nav>
+      <div class="sidebar-help"><a href="faqs.html" class="help-link"><span class="help-icon">?</span><span class="help-label">Help &amp; Support</span></a></div>
+      <div class="sidebar-sync" id="sidebarSync">
+        <div class="sync-dot" id="syncDot"></div>
+        <div class="sync-text"><div class="sync-label">Last synced</div><div class="sync-time" id="syncTime">--:--</div></div>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="header">
+        <div class="header-left">
+          <h2>Inventory</h2>
+          <a href="my-hospital.html" class="my-hospital-pill" title="View my hospital dashboard">
+            <span class="pill-icon">🏥</span>
+            <span class="pill-name">
+              <span class="pill-label">My Hospital</span>
+              <span class="pill-hosp" id="pillHospName">My Hospital</span>
+            </span>
+          </a>
+        </div>
+        <div class="header-right">
+          <div class="filter-group">
+            <select id="inventoryHospitalFilter" aria-label="Filter inventory by hospital">
+              <option value="all">All Hospitals</option>
+            </select>
+          </div>
+          <button class="btn" id="addItemBtn" onclick="openInventoryForm()" style="display:none">+ Add Item</button>
+          <div class="notif-wrapper">
+            <button id="notifBtn" class="icon-btn" aria-label="Notifications">🔔</button>
+            <span id="notifBadge" class="badge">0</span>
+            <div class="notif-panel" id="notifPanel">
+              <div class="notif-panel-header">Notifications <span id="notifPanelCount"></span></div>
+              <div class="notif-list" id="notifList"></div>
+              <div class="notif-panel-footer"><a onclick="goToTransfers()">View all transfers &rarr;</a></div>
+            </div>
+          </div>
+          <div class="profile-wrapper">
+            <button class="profile-btn" id="profileBtn" aria-label="Hospital profile">
+              <span class="profile-avatar-icon">🏥</span>
+            </button>
+            <div class="profile-panel" id="profilePanel">
+              <div class="profile-panel-top">
+                <div class="profile-panel-avatar" id="profileAvatar">🏥</div>
+                <div>
+                  <div class="profile-panel-name" id="profileName">—</div>
+                  <div class="profile-panel-role" id="profileRole">—</div>
+                </div>
+              </div>
+              <div class="profile-panel-body">
+                <div class="pd-row"><span class="pd-label">Hospital ID</span><span class="pd-value" id="pdHospitalId">—</span></div>
+                <div class="pd-row"><span class="pd-label">Hospital</span><span class="pd-value" id="pdHospitalName">—</span></div>
+                <div class="pd-row"><span class="pd-label">Name</span><span class="pd-value" id="pdName">—</span></div>
+                <div class="pd-row"><span class="pd-label">Email</span><span class="pd-value" id="pdEmail">—</span></div>
+                <div class="pd-row"><span class="pd-label">Role</span><span class="pd-value" id="pdRole">—</span></div>
+                <div class="pd-row"><span class="pd-label">Permissions</span><span class="pd-value" id="pdPermissions">—</span></div>
+              </div>
+              <div class="profile-panel-footer">
+                <button class="profile-logout-btn" onclick="localStorage.removeItem('medilink_user');window.location.href='login.html'">⏻ Logout</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div class="inv-hero">
+        <div class="inv-hero-text">
+          <h1>📦 Inventory Management</h1>
+          <p>Track medicines, supplies and reorder levels across all registered hospitals.</p>
+        </div>
+        <div class="inv-hero-stats">
+          <div class="inv-stat-pill"><strong id="heroTotalItems">–</strong><span>Total Items</span></div>
+          <div class="inv-stat-pill"><strong id="heroLowStock">–</strong><span>Low Stock</span></div>
+          <div class="inv-stat-pill"><strong id="heroHospitals">–</strong><span>Hospitals</span></div>
+        </div>
+      </div>
+
+      <section class="inventory">
+        <div class="inventory-table-wrap">
+          <table id="inventoryTable">
+            <thead>
+              <tr>
+                <th>Medicine / Item</th>
+                <th>Batch No.</th>
+                <th>Qty</th>
+                <th>Hospital</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <footer class="footer"><small>⚠️ Rows with quantity at or below reorder level are highlighted. All data is fictional.</small></footer>
+    </div>
+  </div>
+
+  <div id="inventoryModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <h3 id="invModalTitle">Add Inventory Item</h3>
+      <div class="form-grid">
+        <label>Item name<input id="invName" placeholder="e.g. Paracetamol 500mg" /></label>
+        <label>Batch No.<input id="invBatch" placeholder="e.g. P-4522" /></label>
+        <label>Quantity<input id="invQty" type="number" min="0" placeholder="0" /></label>
+        <label>Reorder Level<input id="invReorder" type="number" min="0" placeholder="0" /></label>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" id="invSaveBtn">Save</button>
+        <button class="btn ghost" onclick="closeInventoryModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    /* ── Inventory page: hospital filter + conditional Add Item button ── */
+    document.addEventListener('DOMContentLoaded', () => {
+      const filterEl  = document.getElementById('inventoryHospitalFilter');
+      const addBtn    = document.getElementById('addItemBtn');
+
+      // Populate hospital options from registered users in the database
+      fetch(`${API_BASE}/api/auth/users`)
+        .then(res => res.json())
+        .then(users => {
+          // Extract unique hospital names from registered users (exclude admin accounts)
+          const hospitals = [...new Map(
+            users
+              .filter(u => u.role !== 'admin' && u.hospital_name)
+              .map(u => [u.hospital_name, u])
+          ).values()];
+
+          if (!hospitals.length) {
+            const opt = document.createElement('option');
+            opt.disabled = true;
+            opt.textContent = 'No registered hospitals';
+            filterEl.appendChild(opt);
+            return;
+          }
+
+          hospitals.forEach(u => {
+            const opt = document.createElement('option');
+            opt.value = u.hospital_name;
+            opt.textContent = u.hospital_name;
+            filterEl.appendChild(opt);
+          });
+        })
+        .catch(() => showToast('Failed to load hospitals', 'error'));
+
+      // Handle filter change
+      filterEl?.addEventListener('change', () => {
+        const selected = filterEl.value;
+        const isAll    = selected === 'all';
+
+        // Show/hide Add Item button
+        // Admin: show when a specific hospital is selected
+        // Staff: show only when their own hospital is selected
+        const currentUser = getUser();
+        if (addBtn) {
+          if (isAll) {
+            addBtn.style.display = 'none';
+          } else if (isAdmin()) {
+            addBtn.style.display = '';
+          } else if (currentUser && currentUser.hospital_name === selected) {
+            addBtn.style.display = '';
+          } else {
+            addBtn.style.display = 'none';
+          }
+        }
+
+        // Re-fetch inventory filtered by selected hospital
+        const tbody = document.querySelector('#inventoryTable tbody');
+        if (!tbody) return;
+
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px;color:#999">Loading…</td></tr>`;
+
+        const param = isAll ? '' : `?hospital=${encodeURIComponent(selected)}`;
+
+        fetch(`${API_BASE}/api/inventory${param}`)
+          .then(res => res.json())
+          .then(data => {
+            if (!data.length) {
+              const label = isAll ? 'No inventory items found.' : `No inventory items for <strong>${escHtml(selected)}</strong>.`;
+              tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">📦</div><p>${label}</p></div></td></tr>`;
+              return;
+            }
+            const admin = isAdmin();
+            const user = getUser();
+            tbody.innerHTML = data.map(it => {
+              const canEdit = admin || (user && user.hospital_name === it.hospital);
+              const canDelete = admin || (user && user.hospital_name === it.hospital);
+              return `
+              <tr class="${it.quantity <= (it.reorder_level||10) ? 'low-stock' : ''}" id="inv-${it.id}">
+                <td><strong>${escHtml(it.item_name)}</strong></td>
+                <td style="font-family:'DM Mono',monospace;font-size:12px">${escHtml(it.category || '—')}</td>
+                <td class="${it.quantity <= (it.reorder_level||10) ? 'qty-low' : ''}">${it.quantity} ${it.quantity <= (it.reorder_level||10) ? '⚠️' : ''}</td>
+                <td>${escHtml(it.hospital || '—')}</td>
+                <td style="display:flex;gap:6px">${canEdit
+                  ? `<button class="btn ghost small" onclick="editInventoryItem(${it.id}, '${escHtml(it.item_name)}', '${escHtml(it.category||'')}', ${it.quantity}, ${it.reorder_level||0})">Edit</button>`
+                  : ''}${canDelete
+                  ? `<button class="btn ghost small" style="color:#dc2626;border-color:#dc2626" onclick="deleteInventory(${it.id})">Delete</button>`
+                  : ''}${!canEdit && !canDelete
+                  ? '<span style="color:var(--muted);font-size:12px">View only</span>'
+                  : ''}
+                </td>
+              </tr>`;
+            }).join('');
+
+            // Update hero stats
+            const setHero = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+            setHero('heroTotalItems', data.length);
+            setHero('heroLowStock',   data.filter(it => it.quantity <= (it.reorder_level || 10)).length);
+            setHero('heroHospitals',  new Set(data.map(it => it.hospital).filter(Boolean)).size);
+          })
+          .catch(() => {
+            tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">⚠️</div><p>Failed to load inventory.</p></div></td></tr>`;
+            showToast('Failed to load inventory', 'error');
+          });
+      });
+
+      // Edit: open modal pre-filled with existing item data
+      window.editInventoryItem = function (id, name, batch, qty, reorder) {
+        _editingId = id;
+        document.getElementById('invModalTitle').textContent = 'Edit Inventory Item';
+        document.getElementById('invName').value    = name;
+        document.getElementById('invBatch').value   = batch;
+        document.getElementById('invQty').value     = qty;
+        document.getElementById('invReorder').value = reorder;
+        document.getElementById('inventoryModal').classList.remove('hidden');
+      };
+
+      // Override saveInventoryItem to always send the selected hospital to the DB
+      window.saveInventoryItem = function () {
+        const name    = document.getElementById('invName').value.trim();
+        const batch   = document.getElementById('invBatch').value.trim();
+        const qty     = Number(document.getElementById('invQty').value || 0);
+        const reorder = Number(document.getElementById('invReorder').value || 0);
+
+        if (!name) { showToast('Item name is required', 'error'); return; }
+
+        const selectedHospital = filterEl?.value;
+        const hospitalName = (selectedHospital && selectedHospital !== 'all')
+          ? selectedHospital
+          : (getUser()?.hospital_name || 'MediLink');
+
+        const isEditing = _editingId !== null;
+        const url    = isEditing ? `${API_BASE}/api/inventory/${_editingId}` : `${API_BASE}/api/inventory`;
+        const method = isEditing ? 'PUT' : 'POST';
+
+        fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            item_name: name,
+            category:  batch,
+            quantity:  qty,
+            reorder_level: reorder,
+            hospital:  hospitalName
+          })
+        })
+          .then(res => res.json())
+          .then(() => {
+            showToast(isEditing ? `"${name}" updated` : `"${name}" added to ${hospitalName}`, 'success');
+            _editingId = null;
+            closeInventoryModal();
+            filterEl.dispatchEvent(new Event('change'));
+          })
+          .catch(() => showToast(isEditing ? 'Failed to update item' : 'Failed to save item', 'error'));
+      };
+
+      // Bind Save button to the overridden saveInventoryItem (avoids onclick calling script.js version)
+      document.getElementById('invSaveBtn')?.addEventListener('click', () => window.saveInventoryItem());
+
+      // Override populateInventory to include Edit button
+      window.populateInventory = function () {
+        const tbody = document.querySelector('#inventoryTable tbody');
+        if (!tbody) return;
+
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px;color:#999">Loading…</td></tr>`;
+
+        const user = getUser();
+        const hospitalParam = (user && user.role !== 'admin' && user.hospital_name)
+          ? `?hospital=${encodeURIComponent(user.hospital_name)}`
+          : '';
+
+        fetch(`${API_BASE}/api/inventory${hospitalParam}`)
+          .then(res => res.json())
+          .then(data => {
+            if (!data.length) {
+              tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">📦</div><p>No inventory items found.</p></div></td></tr>`;
+              return;
+            }
+            const admin = isAdmin();
+            const user = getUser();
+            tbody.innerHTML = data.map(it => {
+              const canEdit = admin || (user && user.hospital_name === it.hospital);
+              const canDelete = admin || (user && user.hospital_name === it.hospital);
+              return `
+              <tr class="${it.quantity <= (it.reorder_level||10) ? 'low-stock' : ''}" id="inv-${it.id}">
+                <td><strong>${escHtml(it.item_name)}</strong></td>
+                <td style="font-family:'DM Mono',monospace;font-size:12px">${escHtml(it.category || '—')}</td>
+                <td class="${it.quantity <= (it.reorder_level||10) ? 'qty-low' : ''}">${it.quantity} ${it.quantity <= (it.reorder_level||10) ? '⚠️' : ''}</td>
+                <td>${escHtml(it.hospital || '—')}</td>
+                <td style="display:flex;gap:6px">${canEdit
+                  ? `<button class="btn ghost small" onclick="editInventoryItem(${it.id}, '${escHtml(it.item_name)}', '${escHtml(it.category||'')}', ${it.quantity}, ${it.reorder_level||0})">Edit</button>`
+                  : ''}${canDelete
+                  ? `<button class="btn ghost small" style="color:#dc2626;border-color:#dc2626" onclick="deleteInventory(${it.id})">Delete</button>`
+                  : ''}${!canEdit && !canDelete
+                  ? '<span style="color:var(--muted);font-size:12px">View only</span>'
+                  : ''}
+                </td>
+              </tr>`;
+            }).join('');
+
+            // Update hero stats
+            const setHero = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+            setHero('heroTotalItems', data.length);
+            setHero('heroLowStock',   data.filter(it => it.quantity <= (it.reorder_level || 10)).length);
+            setHero('heroHospitals',  new Set(data.map(it => it.hospital).filter(Boolean)).size);
+          })
+          .catch(() => {
+            tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">⚠️</div><p>Failed to load inventory.</p></div></td></tr>`;
+            showToast('Failed to load inventory', 'error');
+          });
+      };
+
+      // Override deleteInventory to allow staff to delete their own hospital items
+      window.deleteInventory = function (id) {
+        const user = getUser();
+        if (!isAdmin() && (!user || !user.hospital_name)) {
+          showToast('Access denied', 'error'); return;
+        }
+        if (!confirm('Delete this item? This cannot be undone.')) return;
+        fetch(`${API_BASE}/api/inventory/${id}`, { method: 'DELETE' })
+          .then(res => res.json())
+          .then(() => { showToast('Item deleted', 'info'); populateInventory(); })
+          .catch(() => showToast('Failed to delete item', 'error'));
+      };
+
+      // For staff: auto-select their hospital in the dropdown and trigger filter
+      // For admin: load all inventory
+      const currentUser = getUser();
+      if (!isAdmin() && currentUser && currentUser.hospital_name) {
+        // Wait for the hospital dropdown to finish populating, then select staff's hospital
+        setTimeout(() => {
+          filterEl.value = currentUser.hospital_name;
+          filterEl.dispatchEvent(new Event('change'));
+        }, 300);
+      } else {
+        populateInventory();
+      }
+    });
+  </script>
+</body>
+</html>

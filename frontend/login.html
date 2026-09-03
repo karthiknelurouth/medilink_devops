@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Login — MediLink</title>
+  <link rel="stylesheet" href="style.css" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      background: #fff8fa;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+      position: relative;
+      overflow: hidden;
+      padding: 40px 16px;
+    }
+
+    .bg-pattern {
+      position: fixed;
+      inset: -100%;
+      width: 300%; height: 300%;
+      z-index: 0;
+      pointer-events: none;
+      background-image: url('bg-pattern-1.png');
+      background-repeat: repeat;
+      background-size: 520px 520px;
+      opacity: 0.16;
+      animation: bgScroll 30s linear infinite;
+    }
+    @keyframes bgScroll {
+      from { transform: translate(0, 0); }
+      to   { transform: translate(520px, 520px); }
+    }
+
+    .page-wrap {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+    }
+
+    .logo-wrap {
+      margin-bottom: 14px;
+      animation: fadeDown 0.5s ease both;
+      background: rgba(255,255,255,0.92);
+      border-radius: 20px;
+      padding: 18px 32px;
+      box-shadow: 0 0 40px rgba(216,27,96,0.18), 0 2px 16px rgba(0,0,0,0.07);
+      border: 1px solid rgba(216,27,96,0.12);
+    }
+    .logo-wrap img { width: 210px; display: block; }
+
+    .tagline {
+      font-size: 26px;
+      font-weight: 800;
+      color: #111827;
+      margin-bottom: 26px;
+      text-align: center;
+      animation: fadeDown 0.55s ease both;
+      text-shadow: 0 1px 8px rgba(255,255,255,0.9);
+      background: rgba(255,255,255,0.7);
+      padding: 6px 20px;
+      border-radius: 999px;
+    }
+
+    .auth-card {
+      position: relative;
+      background: linear-gradient(130deg, rgba(26,10,16,0.88) 0%, rgba(45,15,28,0.88) 55%, rgba(58,16,32,0.88) 100%);
+      backdrop-filter: blur(12px);
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(216,27,96,0.18), 0 2px 12px rgba(0,0,0,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 52px 58px 44px;
+      width: 100%;
+      max-width: 560px;
+      animation: fadeUp 0.5s ease both;
+      overflow: hidden;
+    }
+
+    .auth-card::before {
+      content: '';
+      position: absolute; top: -40px; right: -40px;
+      width: 220px; height: 220px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(216,27,96,0.22) 0%, transparent 70%);
+    }
+    .auth-card::after {
+      content: '';
+      position: absolute; bottom: -50px; left: 30%;
+      width: 200px; height: 200px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(232,54,93,0.12) 0%, transparent 70%);
+    }
+
+    .auth-field {
+      display: flex; flex-direction: column; gap: 9px;
+      margin-bottom: 24px; position: relative; z-index: 1;
+    }
+    .auth-field label { font-size: 15px; font-weight: 600; color: rgba(255,255,255,0.75); }
+    .input-wrap { position: relative; }
+    .input-icon {
+      position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+      font-size: 17px; color: rgba(255,255,255,0.5);
+    }
+    .auth-field input {
+      width: 100%; padding: 15px 16px 15px 44px;
+      border-radius: 10px; border: 1.5px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.08); color: #fff;
+      font-size: 15.5px; outline: none;
+    }
+    .auth-field input::placeholder { color: rgba(255,255,255,0.45); }
+    .auth-field input:focus {
+      border-color: #D81B60;
+      box-shadow: 0 0 0 3px rgba(216,27,96,0.2);
+    }
+
+    .error-msg {
+      color: #ff8ab3; font-size: 13px; font-weight: 600;
+      margin-bottom: 14px; text-align: center;
+      position: relative; z-index: 1; min-height: 18px;
+    }
+
+    .auth-submit {
+      width: 100%; padding: 16px;
+      background: linear-gradient(90deg, #D81B60, #E8365D);
+      color: #fff; border: none; border-radius: 999px;
+      font-size: 17px; font-weight: 700; cursor: pointer;
+      margin-top: 4px; box-shadow: 0 4px 18px rgba(216,27,96,0.4);
+      transition: all 0.2s; position: relative; z-index: 1;
+    }
+    .auth-submit:hover { transform: translateY(-1px); box-shadow: 0 8px 28px rgba(216,27,96,0.45); }
+    .auth-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    .auth-links {
+      display: flex; justify-content: space-between;
+      margin-top: 18px; position: relative; z-index: 1;
+    }
+    .auth-links a { font-size: 14.5px; color: #ff8ab3; font-weight: 600; text-decoration: underline; }
+
+    .feature-pills {
+      display: flex; gap: 10px; flex-wrap: wrap;
+      justify-content: center; margin-top: 18px;
+      animation: fadeUp 0.65s ease both;
+    }
+    .pill-item {
+      background: rgba(255,255,255,0.88);
+      border: 1px solid rgba(216,27,96,0.15);
+      border-radius: 999px; padding: 7px 16px;
+      font-size: 13px; font-weight: 600; color: #374151;
+    }
+
+    @keyframes fadeDown { from { opacity:0; transform:translateY(-14px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes fadeUp   { from { opacity:0; transform:translateY(14px);  } to { opacity:1; transform:translateY(0); } }
+  </style>
+</head>
+<body>
+
+  <div class="bg-pattern"></div>
+
+  <div class="page-wrap">
+
+    <div class="logo-wrap">
+      <img src="medilink-logo.png" alt="MediLink" />
+    </div>
+
+    <h1 class="tagline">Good to see you again</h1>
+
+    <div class="auth-card">
+
+      <div class="auth-field">
+        <label>Your email</label>
+        <div class="input-wrap">
+          <span class="input-icon">👤</span>
+          <input type="text" id="loginId" placeholder="e.g. admin@capitalgate.gov.in" />
+        </div>
+      </div>
+
+      <div class="auth-field">
+        <label>Your password</label>
+        <div class="input-wrap">
+          <span class="input-icon">🔒</span>
+          <input type="password" id="loginPass" placeholder="Enter your password" />
+        </div>
+      </div>
+
+      <div class="error-msg" id="loginError"></div>
+
+      <button class="auth-submit" id="loginBtn" onclick="handleLogin()">Sign in →</button>
+
+      <div class="auth-links">
+        <a href="register.html">Don't have an account?</a>
+        <a href="#">Forgot password?</a>
+      </div>
+
+    </div>
+
+    <div class="feature-pills">
+      <div class="pill-item">ICU Tracking</div>
+      <div class="pill-item">Blood Units</div>
+      <div class="pill-item">Oxygen</div>
+      <div class="pill-item">Transfers</div>
+      <div class="pill-item">Analytics</div>
+    </div>
+
+  </div>
+
+  <script>
+    const API = 'http://localhost:8000';
+
+    async function handleLogin() {
+      const email = document.getElementById('loginId').value.trim();
+      const pass  = document.getElementById('loginPass').value.trim();
+      const errEl = document.getElementById('loginError');
+      const btn   = document.getElementById('loginBtn');
+
+      errEl.textContent = '';
+      if (!email || !pass) { errEl.textContent = 'Please fill in all fields.'; return; }
+
+      btn.disabled = true;
+      btn.textContent = 'Signing in…';
+
+      try {
+        const res  = await fetch(`${API}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password: pass })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          errEl.textContent = data.message || 'Invalid email or password.';
+          btn.disabled = false;
+          btn.textContent = 'Sign in →';
+          return;
+        }
+
+        // Save user info to localStorage
+        localStorage.setItem('medilink_user', JSON.stringify(data.user));
+
+      if (data.user.role === 'admin') {
+      window.location.href = 'admin.html';
+      } else {
+        window.location.href = 'dashboard.html';
+      }
+
+      } catch (err) {
+        errEl.textContent = 'Server error. Is the backend running?';
+        btn.disabled = false;
+        btn.textContent = 'Sign in →';
+      }
+    }
+
+    // Allow Enter key to submit
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Enter') handleLogin();
+    });
+  </script>
+
+</body>
+</html>

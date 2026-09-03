@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>FAQs — Hospital Resource</title>
+  <link rel="stylesheet" href="style.css" />
+  
+  <script>
+    (function() {
+      try {
+        const user = JSON.parse(localStorage.getItem('medilink_user'));
+        if (user && user.role === 'admin') {
+          const style = document.createElement('style');
+          style.textContent = '.my-hospital-pill { display: none !important; }';
+          document.head.appendChild(style);
+        }
+      } catch(e) {}
+    })();
+  </script>
+</head>
+<body>
+  <div id="app">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand"><img src="medilink-logo.png" class="brand-logo" alt="MediLink" /></div>
+      <nav class="nav">
+        <a class="nav-link" href="dashboard.html"><span class="nav-icon">📊</span><span class="nav-label">Dashboard</span></a>
+        <a class="nav-link" href="inventory.html"><span class="nav-icon">📦</span><span class="nav-label">Inventory</span></a>
+        <a class="nav-link" href="transfers.html"><span class="nav-icon">🔄</span><span class="nav-label">Patient Transfers</span></a>
+        <a class="nav-link" href="disease-prediction.html"><span class="nav-icon">🔬</span><span class="nav-label">Disease Prediction</span></a>
+        <a class="nav-link" href="shortage-prediction.html"><span class="nav-icon">💊</span><span class="nav-label">Shortage Prediction</span></a>
+        <a class="nav-link active" href="faqs.html"><span class="nav-icon">❓</span><span class="nav-label">FAQs</span></a>
+      </nav>
+      <div class="sidebar-help"><a href="faqs.html" class="help-link"><span class="help-icon">?</span><span class="help-label">Help &amp; Support</span></a></div>
+      <div class="sidebar-sync" id="sidebarSync">
+        <div class="sync-dot" id="syncDot"></div>
+        <div class="sync-text"><div class="sync-label">Last synced</div><div class="sync-time" id="syncTime">--:--</div></div>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="header">
+        <div class="header-left">
+          <h2>FAQs</h2>
+          <a href="my-hospital.html" class="my-hospital-pill" title="View my hospital dashboard">
+            <span class="pill-icon">🏥</span>
+            <span class="pill-name">
+              <span class="pill-label">My Hospital</span>
+              <span class="pill-hosp" id="pillHospName">My Hospital</span>
+            </span>
+          </a>
+        </div>
+        <div class="header-right">
+          <div class="notif-wrapper">
+            <button id="notifBtn" class="icon-btn" aria-label="Notifications">🔔</button>
+            <span id="notifBadge" class="badge">0</span>
+            <div class="notif-panel" id="notifPanel">
+              <div class="notif-panel-header">Notifications <span id="notifPanelCount"></span></div>
+              <div class="notif-list" id="notifList"></div>
+              <div class="notif-panel-footer"><a onclick="goToTransfers()">View all transfers &rarr;</a></div>
+            </div>
+          </div>
+          <div class="profile-wrapper">
+            <button class="profile-btn" id="profileBtn" aria-label="Hospital profile">
+              <span class="profile-avatar-icon">🏥</span>
+            </button>
+            <div class="profile-panel" id="profilePanel">
+              <div class="profile-panel-top">
+                <div class="profile-panel-avatar" id="profileAvatar">🏥</div>
+                <div>
+                  <div class="profile-panel-name" id="profileName">—</div>
+                  <div class="profile-panel-role" id="profileRole">—</div>
+                </div>
+              </div>
+              <div class="profile-panel-body">
+                <div class="pd-row"><span class="pd-label">Hospital ID</span><span class="pd-value" id="pdHospitalId">—</span></div>
+                <div class="pd-row"><span class="pd-label">Hospital</span><span class="pd-value" id="pdHospitalName">—</span></div>
+                <div class="pd-row"><span class="pd-label">Name</span><span class="pd-value" id="pdName">—</span></div>
+                <div class="pd-row"><span class="pd-label">Email</span><span class="pd-value" id="pdEmail">—</span></div>
+                <div class="pd-row"><span class="pd-label">Role</span><span class="pd-value" id="pdRole">—</span></div>
+                <div class="pd-row"><span class="pd-label">Permissions</span><span class="pd-value" id="pdPermissions">—</span></div>
+              </div>
+              <div class="profile-panel-footer">
+                <button class="profile-logout-btn" onclick="localStorage.removeItem('medilink_user');window.location.href='login.html'">⏻ Logout</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section class="faqs">
+        <p class="muted" style="margin:0 0 18px;font-size:14px">Frequently asked questions about emergency coordination. Click any question to expand.</p>
+        <div class="accordion" id="faqAccordion"></div>
+      </section>
+
+      <footer class="footer"><small>© Government Health — Demo UI • All data is fictional.</small></footer>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

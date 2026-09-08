@@ -101,6 +101,7 @@
         </div>
         <div class="header-right">
           <button class="btn" id="dashUpdateStatsBtn" style="display:none" onclick="openDashStatsModal()">✏️ Update Stats</button>
+          <button class="btn" id="refreshDataBtn">🔄 Refresh Data</button>
           <div class="filter-group">
             <select id="filterHospital" aria-label="Filter by hospital"><option value="all">All Hospitals</option></select>
             <select id="filterPeriod" aria-label="Filter period">
@@ -576,7 +577,78 @@
       }
     }
 
+    async function refreshDashboardData() {
+  const refreshBtn = document.getElementById('refreshDataBtn');
+
+  if (refreshBtn) {
+    refreshBtn.disabled = true;
+    refreshBtn.textContent = '⟳ Refreshing...';
+  }
+
+  try {
+    const res = await fetch(`${API}/api/hospitals`);
+
+    if (!res.ok) {
+      throw new Error('Failed to fetch hospital data');
+    }
+
+    const hospitals = await res.json();
+    _allHospitals = hospitals;
+
+    // Update hospital filter options
+    const filterHospital = document.getElementById('filterHospital');
+
+    if (filterHospital) {
+      const currentValue = filterHospital.value;
+
+      filterHospital.innerHTML =
+        '<option value="all">All Hospitals</option>';
+
+      hospitals.forEach(h => {
+        const opt = document.createElement('option');
+        opt.value = h.hospital_id;
+        opt.textContent = h.hospital_name;
+        filterHospital.appendChild(opt);
+      });
+
+      if (hospitals.some(h => h.hospital_id === currentValue)) {
+        filterHospital.value = currentValue;
+      }
+    }
+
+    // Refresh the currently displayed view
+    if (_selectedHospital) {
+      const updated = hospitals.find(
+        h => h.hospital_id === _selectedHospital.hospital_id
+      );
+
+      if (updated) {
+        showSingleHospitalView(updated);
+      } else {
+        showAllHospitalsView();
+      }
+    } else {
+      showAllHospitalsView();
+    }
+
+    updateSyncTime();
+    showToast('Dashboard data refreshed', 'success');
+
+  } catch (error) {
+    console.error('Dashboard refresh failed:', error);
+    showToast('Failed to refresh hospital data', 'error');
+
+  } finally {
+    if (refreshBtn) {
+      refreshBtn.disabled = false;
+      refreshBtn.textContent = '🔄 Refresh Data';
+    }
+  }
+}
+
+
     document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('refreshDataBtn')?.addEventListener('click', refreshDashboardData);
       applyRoleUI();
       updateNotifBadges();
 
@@ -601,7 +673,7 @@
               if (val === 'all') {
                 showAllHospitalsView();
               } else {
-                const selected = hospitals.find(h => h.hospital_id === val);
+                const selected = _allHospitals.find(h => h.hospital_id === val);
                 if (selected) showSingleHospitalView(selected);
               }
             });

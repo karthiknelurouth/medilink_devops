@@ -120,8 +120,26 @@
       </div>
       <div class="admin-hero-stats">
         <div class="admin-stat-pill"><strong id="statTotal">–</strong><span>Total Users</span></div>
-        <div class="admin-stat-pill"><strong id="statStaff">–</strong><span>Staff</span></div>
         <div class="admin-stat-pill"><strong id="statHosps">–</strong><span>Hospitals</span></div>
+      </div>
+    </div>
+
+    <!-- Hospitals Table -->
+    <div class="admin-section">
+      <div class="admin-section-title">🏥 Hospitals</div>
+      <div style="overflow-x:auto">
+        <table class="users-table">
+          <thead>
+            <tr>
+              <th>Hospital</th>
+              <th>Hospital ID</th>
+              <th>Staff Count</th>
+            </tr>
+          </thead>
+          <tbody id="hospitalsTableBody">
+            <tr><td colspan="3" style="text-align:center;padding:24px;color:#999">Loading…</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -175,8 +193,32 @@
       .then(res => res.json())
       .then(users => {
         document.getElementById('statTotal').textContent = users.length;
-        document.getElementById('statStaff').textContent = users.filter(u => u.role !== 'admin').length;
         document.getElementById('statHosps').textContent = new Set(users.map(u => u.hospital_id).filter(Boolean)).size;
+
+        // Build hospitals list: unique hospitals with a staff (non-admin) count
+        const hospitalMap = new Map();
+        users
+          .filter(u => u.role !== 'admin' && u.hospital_id)
+          .forEach(u => {
+            const key = u.hospital_id;
+            if (!hospitalMap.has(key)) {
+              hospitalMap.set(key, { name: u.hospital_name || '—', id: u.hospital_id, count: 0 });
+            }
+            hospitalMap.get(key).count++;
+          });
+        const hospitals = [...hospitalMap.values()];
+
+        const hospTbody = document.getElementById('hospitalsTableBody');
+        if (!hospitals.length) {
+          hospTbody.innerHTML = `<tr><td colspan="3" style="text-align:center;padding:24px;color:var(--muted)">No registered hospitals yet.</td></tr>`;
+        } else {
+          hospTbody.innerHTML = hospitals.map(h => `
+            <tr>
+              <td><strong>${escHtml(h.name)}</strong></td>
+              <td style="font-family:'DM Mono',monospace;font-size:12px">${escHtml(h.id)}</td>
+              <td>${h.count}</td>
+            </tr>`).join('');
+        }
 
         if (!users.length) {
           document.getElementById('usersTableBody').innerHTML =

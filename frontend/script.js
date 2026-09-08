@@ -678,6 +678,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   bindTableSort();
   bindTableSearch();
+
+    document.getElementById('inventorySearch')?.addEventListener('input', e => {
+    const q = e.target.value.toLowerCase().trim();
+
+    document.querySelectorAll('#inventoryTable tbody tr').forEach(row => {
+      const itemName = row.cells[0]?.textContent.toLowerCase() || '';
+      row.style.display = !q || itemName.includes(q) ? '' : 'none';
+    });
+  });
+
   bindExports();
   updateSyncTime();
   _scheduleSyncStale();

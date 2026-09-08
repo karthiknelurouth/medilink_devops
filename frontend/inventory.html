@@ -131,8 +131,8 @@
           <table id="inventoryTable">
             <thead>
               <tr>
-                <th>Medicine / Item</th>
                 <th>Batch No.</th>
+                <th>Medicine / Item</th>
                 <th>Qty</th>
                 <th>Hospital</th>
                 <th>Actions</th>
@@ -242,8 +242,8 @@
               const canDelete = admin || (user && user.hospital_name === it.hospital);
               return `
               <tr class="${it.quantity <= (it.reorder_level||10) ? 'low-stock' : ''}" id="inv-${it.id}">
-                <td><strong>${escHtml(it.item_name)}</strong></td>
                 <td style="font-family:'DM Mono',monospace;font-size:12px">${escHtml(it.category || '—')}</td>
+                <td><strong>${escHtml(it.item_name)}</strong></td>
                 <td class="${it.quantity <= (it.reorder_level||10) ? 'qty-low' : ''}">${it.quantity} ${it.quantity <= (it.reorder_level||10) ? '⚠️' : ''}</td>
                 <td>${escHtml(it.hospital || '—')}</td>
                 <td style="display:flex;gap:6px">${canEdit
@@ -348,8 +348,8 @@
               const canDelete = admin || (user && user.hospital_name === it.hospital);
               return `
               <tr class="${it.quantity <= (it.reorder_level||10) ? 'low-stock' : ''}" id="inv-${it.id}">
-                <td><strong>${escHtml(it.item_name)}</strong></td>
                 <td style="font-family:'DM Mono',monospace;font-size:12px">${escHtml(it.category || '—')}</td>
+                <td><strong>${escHtml(it.item_name)}</strong></td>
                 <td class="${it.quantity <= (it.reorder_level||10) ? 'qty-low' : ''}">${it.quantity} ${it.quantity <= (it.reorder_level||10) ? '⚠️' : ''}</td>
                 <td>${escHtml(it.hospital || '—')}</td>
                 <td style="display:flex;gap:6px">${canEdit

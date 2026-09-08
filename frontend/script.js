@@ -158,10 +158,6 @@ const DUMMY = {
     a: "Disease Prediction analyzes unusual increases in the usage of medical supplies associated with different conditions. When multiple related items show high usage, the system can indicate a possible disease trend or outbreak."
   },
   {
-    q: "How do notifications work?",
-    a: "Notifications appear through the bell icon in the header. The notification panel displays pending patient transfer requests along with their urgency, source hospital, destination hospital and request time."
-  },
-  {
     q: "What is the difference between Admin and Staff access?",
     a: "Admins have broader permissions such as viewing and managing system data, transfers, exports and administrative functions. Staff users have more limited access based on their assigned hospital and permissions."
   },

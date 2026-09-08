@@ -133,12 +133,47 @@ const DUMMY = {
     { id:"T-1003", from:"KEM City Medical Center (Mumbai)",       to:"Green General Hospital (Vijayawada)", requested:{icu:0,oxygen:1,bloodGroup:"A+"}, criticality:"Normal",   time:"2026-02-10 16:30", notes:"Stable but referral for bed availability"     }
   ],
   faqs: [
-    { q:"How to request a patient transfer?",       a:"Open the Patient Transfers page, click 'New Request', fill in the required resources and urgency level, then submit. The receiving hospital coordinator can Accept or Reject the request from their dashboard." },
-    { q:"What constitutes 'Emergency' status?",     a:"Emergency is triggered when ICU availability drops below 5% of total ICU beds, or when oxygen / blood unit counts fall below critical thresholds defined by the state health authority." },
-    { q:"How are notifications delivered?",         a:"Notifications appear in the header bell icon with a pulsing badge. In production, real-time WebSocket events push updates; this demo simulates badges with local state." },
-    { q:"How do I update inventory levels?",        a:"Navigate to the Inventory page, find the item and click 'Edit' to update quantity or reorder threshold. Rows highlighted in red are currently below the reorder level." },
-    { q:"Can multiple states be compared at once?", a:"Use the 'All States' option in the State filter on the Dashboard to view combined data, or select individual states to drill down. The table supports column-based sorting for quick comparison." }
-  ]
+  {
+    q: "How do I request a patient transfer?",
+    a: "Open the Patient Transfers page and click 'New Request'. Enter the source and destination hospitals, required ICU beds, oxygen cylinders, blood group, urgency level and any additional notes, then submit the request."
+  },
+  {
+    q: "What do the Normal, Warning, Critical and Emergency statuses mean?",
+    a: "These statuses indicate the current resource condition of a hospital. Normal indicates sufficient resources, while Warning, Critical and Emergency indicate increasing levels of resource shortage or limited availability."
+  },
+  {
+    q: "How do I check hospital resource availability?",
+    a: "Open the Dashboard to view hospital resources such as total beds, available ICU beds, blood units and oxygen cylinders. Hospital data can also be filtered to view a specific hospital."
+  },
+  {
+    q: "How do I update inventory levels?",
+    a: "Open the Inventory page to view available medical supplies and their quantities. Authorized users can update inventory information, while low-stock items are highlighted so they can be identified quickly."
+  },
+  {
+    q: "How does Shortage Prediction work?",
+    a: "Shortage Prediction uses current inventory quantity, reorder levels and daily usage information to identify resources that may run low and provide reorder recommendations."
+  },
+  {
+    q: "How does Disease Prediction work?",
+    a: "Disease Prediction analyzes unusual increases in the usage of medical supplies associated with different conditions. When multiple related items show high usage, the system can indicate a possible disease trend or outbreak."
+  },
+  {
+    q: "How do notifications work?",
+    a: "Notifications appear through the bell icon in the header. The notification panel displays pending patient transfer requests along with their urgency, source hospital, destination hospital and request time."
+  },
+  {
+    q: "What is the difference between Admin and Staff access?",
+    a: "Admins have broader permissions such as viewing and managing system data, transfers, exports and administrative functions. Staff users have more limited access based on their assigned hospital and permissions."
+  },
+  {
+    q: "What is the My Hospital page?",
+    a: "The My Hospital page provides hospital-specific information for the logged-in user, allowing staff to quickly access information related to their assigned hospital."
+  },
+  {
+    q: "How often is hospital information updated?",
+    a: "MediLink retrieves available hospital information from the system database when the page loads. The Last Synced indicator shows when the interface was most recently refreshed."
+  }
+]
 };
 
 /* =========================================================

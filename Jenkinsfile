@@ -25,7 +25,7 @@ pipeline {
                 sh '''
                     cp "$HOME/Desktop/medilink_devops/.env" .env
                     chmod 600 .env
-                    docker compose up -d --build
+                    docker compose -p medilink_devops up -d --build
                 '''
                 echo 'Docker containers started successfully.'
             }

@@ -1,38 +1,76 @@
+
 pipeline {
     agent any
+
+    options {
+        disableConcurrentBuilds()
+        skipDefaultCheckout(true)
+    }
+
+    environment {
+        PATH = "/Users/karthik/.docker/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:${env.PATH}"
+    }
 
     stages {
 
         stage('Checkout') {
             steps {
-                echo 'Checking out source code...'
+                checkout scm
+                echo 'GitHub checkout completed.'
             }
         }
 
-        stage('Install Backend Dependencies') {
+        stage('Docker Build and Start') {
             steps {
-                dir('backend') {
-                    bat 'npm install'
+                sh '''
+                    cp "$HOME/Desktop/medilink_devops/.env" .env
+                    chmod 600 .env
+                    docker compose up -d --build
+                '''
+                echo 'Docker containers started successfully.'
+            }
+        }
+
+        stage('Application Health Check') {
+            steps {
+                sh '''
+                    for i in $(seq 1 30); do
+                        if curl -fsS http://localhost:8081/login.html > /dev/null &&
+                           curl -fsS http://localhost:8000/api/hospitals > /dev/null; then
+                            echo "MediLink is ready."
+                            exit 0
+                        fi
+                        sleep 2
+                    done
+
+                    echo "MediLink failed to start."
+                    exit 1
+                '''
+            }
+        }
+
+        stage('Selenium Testing') {
+            steps {
+                dir('selenium-tests') {
+                    sh 'mvn test'
                 }
-            }
-        }
-
-        stage('Validate Project') {
-            steps {
-                bat 'node --version'
-                bat 'npm --version'
-                echo 'MediLink project validation completed successfully.'
+                echo 'Selenium tests completed.'
             }
         }
     }
 
     post {
+        always {
+            junit allowEmptyResults: true,
+                  testResults: 'selenium-tests/target/surefire-reports/*.xml'
+        }
+
         success {
-            echo 'CI Pipeline completed successfully.'
+            echo 'MediLink CI/CD pipeline completed successfully!'
         }
 
         failure {
-            echo 'CI Pipeline failed. Please check the console output.'
+            echo 'Pipeline failed. Check the console output.'
         }
     }
 }

@@ -76,15 +76,13 @@ public class DashboardTest {
             WebDriverWait wait =
                 new WebDriverWait(driver, Duration.ofSeconds(15));
 
+            // Wait until resource cards contain visible text
             wait.until(d ->
                 d.findElements(By.cssSelector("#topCards .card"))
-                 .size() > 0
+                 .size() > 0 &&
+                !d.findElement(By.id("topCards"))
+                  .getText().trim().isEmpty()
             );
-
-            String cards =
-                driver.findElement(By.id("topCards")).getText();
-
-            assertFalse(cards.isEmpty());
 
             System.out.println("Resource cards test passed!");
 

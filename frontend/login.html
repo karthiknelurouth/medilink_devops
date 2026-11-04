@@ -192,7 +192,7 @@
 
       <div class="error-msg" id="loginError"></div>
 
-      <button class="auth-submit" id="loginBtn" onclick="handleLogin()">Sign in →</button>
+      <button type="button" class="auth-submit" id="loginBtn">Sign in →</button>
 
       <div class="auth-links">
         <a href="register.html">Don't have an account?</a>
@@ -256,6 +256,8 @@
         btn.textContent = 'Sign in →';
       }
     }
+
+    document.getElementById('loginBtn').addEventListener('click', handleLogin);
 
     // Allow Enter key to submit
     document.addEventListener('keydown', e => {

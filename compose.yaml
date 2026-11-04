@@ -14,7 +14,7 @@ services:
     environment:
       DB_HOST: db
       DB_USER: root
-      DB_PASSWORD: Abcd12345
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD}
       DB_NAME: medilink
       PORT: 8000
     depends_on:
@@ -24,7 +24,7 @@ services:
   db:
     image: mysql:8.4
     environment:
-      MYSQL_ROOT_PASSWORD: Abcd12345
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: medilink
     volumes:
       - mysql_data:/var/lib/mysql

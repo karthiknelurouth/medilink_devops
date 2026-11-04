@@ -35,7 +35,7 @@ MediLink is a hospital resource and emergency coordination platform designed to 
 ### Database
 
 * MySQL
-* Firebase
+
 
 ---
 
